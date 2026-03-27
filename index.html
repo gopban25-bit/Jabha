@@ -3,78 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شقق فخمة للكراء - الجبهة</title>
+    <title>إقامة فاخرة - الجبهة</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <style>
-        .swiper-slide img {
-            width: 100%;
-            height: 550px;
-            object-fit: cover;
-            border-radius: 1rem;
-        }
+        /* هاد الكود كيحيد أي حاجة زايدة باش يبان السيت نقي */
+        .instagram-section iframe { border-radius: 20px !important; overflow: hidden; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-slate-50 font-sans text-gray-900">
 
-    <header class="bg-white shadow-sm py-5 px-8 flex justify-between items-center">
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">شقق الجبهة</h1>
-        <a href="tel:0673291937" class="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition font-bold shadow-lg">احجز الآن</a>
-    </header>
-
-    <section class="max-w-5xl mx-auto py-16 px-4">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">اكتشف الفخامة والراحة</h2>
-            <p class="text-lg text-gray-500">جولة في شققنا المصممة بعناية لتجربة سكن لا تنسى</p>
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <span class="text-2xl font-black tracking-tighter text-blue-600">JEBHA <span class="text-gray-800">STAY</span></span>
+            <a href="https://wa.me/212673291937" class="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:bg-blue-700 transition-all">احجز الآن</a>
         </div>
+    </nav>
 
-        <div class="swiper mySwiper shadow-2xl rounded-2xl overflow-hidden border-4 border-white">
-            <div class="swiper-wrapper">
-                <div class="swiper-slide relative">
-                    <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200&auto=format&fit=crop" alt="صالون">
-                    <div class="absolute bottom-0 w-full bg-gradient-to-t from-black/90 to-transparent p-8 text-white text-right">
-                        <h3 class="text-3xl font-bold">صالون عصري ومريح</h3>
-                    </div>
-                </div>
-                <div class="swiper-slide relative">
-                    <img src="https://images.unsplash.com/photo-1502672260266-1c1de2d9d344?q=80&w=1200&auto=format&fit=crop" alt="غرفة">
-                    <div class="absolute bottom-0 w-full bg-gradient-to-t from-black/90 to-transparent p-8 text-white text-right">
-                        <h3 class="text-3xl font-bold">غرفة نوم هادئة</h3>
-                    </div>
-                </div>
-                <div class="swiper-slide relative">
-                    <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1200&auto=format&fit=crop" alt="مطبخ">
-                    <div class="absolute bottom-0 w-full bg-gradient-to-t from-black/90 to-transparent p-8 text-white text-right">
-                        <h3 class="text-3xl font-bold">مطبخ مجهز بالكامل</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="swiper-button-next !text-white"></div>
-            <div class="swiper-button-prev !text-white"></div>
-            <div class="swiper-pagination"></div>
+    <section class="py-20 px-6 text-center">
+        <h1 class="text-5xl md:text-7xl font-black mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            عطلة الأحلام في الجبهة
+        </h1>
+        <p class="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+            استمتع بإقامة استثنائية في شققنا المفروشة المطلة على البحر. صور حقيقية ومحدثة من قلب الواقع.
+        </p>
+    </section>
+
+    <section class="max-w-6xl mx-auto px-6 pb-20">
+        <div class="bg-white p-4 rounded-[2rem] shadow-2xl shadow-blue-100/50 border border-gray-100 instagram-section">
+            <h2 class="text-2xl font-bold mb-8 text-center pt-4">جولة حصرية في شققنا</h2>
+            
+            <script src="https://elfsightcdn.com/platform.js" async></script>
+            <div class="elfsight-app-49bca034-099a-4983-b144-e20e8735336d" data-elfsight-app-lazy></div>
+            
         </div>
     </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script>
-        var swiper = new Swiper(".mySwiper", {
-            spaceBetween: 30,
-            effect: "fade", /* هادي هي لي كتعطي ديك الحركة الواعرة ديال الانتقال */
-            grabCursor: true,
-            loop: true,
-            autoplay: {
-                delay: 3500,
-                disableOnInteraction: false,
-            },
-            pagination: {
-                el: ".swiper-pagination",
-                clickable: true,
-            },
-            navigation: {
-                nextEl: ".swiper-button-next",
-                prevEl: ".swiper-button-prev",
-            },
-        });
-    </script>
+    <footer class="bg-white border-t border-gray-100 py-10 text-center">
+        <p class="text-gray-400">© 2026 جميع الحقوق محفوظة لشقق الجبهة</p>
+    </footer>
+
 </body>
 </html>
