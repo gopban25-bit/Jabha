@@ -19,7 +19,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* منع التمرير نهائياً */
+            overflow: hidden;
             position: relative;
         }
 
@@ -45,7 +45,6 @@
             100% { transform: translate(5%, -5%) scale(1.05) rotate(-5deg); }
         }
 
-        /* حاوية بحجم شاشة الهاتف تماماً بدون Scroll */
         .phone-container {
             width: 100%;
             max-width: 400px;
@@ -57,7 +56,6 @@
             padding: 20px;
         }
 
-        /* إطار تسجيل الدخول بالأبيض كأنه صباغة عصرية */
         .login-card {
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(25px);
@@ -146,23 +144,35 @@
             box-shadow: 0 8px 25px rgba(255, 23, 68, 0.4);
         }
 
-        .signup-text {
-            text-align: center;
+        /* تنسيق قسم اختيار اللغة */
+        .language-switcher {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
             margin-top: 30px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
         }
 
-        .signup-text a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 700;
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .lang-btn:hover, .lang-btn.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #ffffff;
         }
     </style>
 </head>
 <body>
 
-    <!-- الخلفية الدخانية المتحركة -->
     <div class="smoke-background"></div>
 
     <div class="phone-container">
@@ -184,11 +194,23 @@
                 <button type="submit" class="login-btn">Login</button>
             </form>
 
-            <div class="signup-text">
-                Don't have an account? <a href="#">Signup</a>
+            <!-- زر اختيار اللغة -->
+            <div class="language-switcher">
+                <button class="lang-btn active" onclick="setLanguage('en')">English</button>
+                <button class="lang-btn" onclick="setLanguage('ar')">العربية</button>
             </div>
         </div>
     </div>
+
+    <script>
+        function setLanguage(lang) {
+            const btns = document.querySelectorAll('.lang-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // هنا تقدر تزيد كود تبديل النصوص لاحقاً ila بغيتي
+        }
+    </script>
 
 </body>
 </html>
