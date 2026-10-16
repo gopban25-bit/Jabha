@@ -1,63 +1,86 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تطبيق الذكاء الاصطناعي - جواب بسطر</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white flex flex-col justify-between h-screen p-4">
-  
-  <div class="max-w-xl mx-auto w-full flex-1 flex flex-col">
-    <h1 class="text-2xl font-bold text-center my-4 text-emerald-400">أسأل الذكاء الاصطناعي (جواب بسطر)</h1>
-    
-    <!-- منطقة المحادثة -->
-    <div id="chat-box" class="flex-1 bg-gray-800 rounded-lg p-4 overflow-y-auto space-y-3 mb-4 border border-gray-700">
-      <div class="bg-gray-700 p-3 rounded-lg max-w-xs self-start">مرحباً! سولني أي سؤال وغانجاوبك بسطر واحد فقط.</div>
-    </div>
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 
-    <!-- منطقة الإدخال -->
-    <div class="flex gap-2">
-      <input type="text" id="user-input" placeholder="اكتب سؤالك هنا..." class="flex-1 p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-emerald-500">
-      <button onclick="sendMessage()" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-lg font-bold">إرسال</button>
-    </div>
-  </div>
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeTab, setActiveTab] = useState('chats');
+  const [userId, setUserId] = useState('');
+  const [searchId, setSearchId] = useState('');
 
-  <script>
-    const API_KEY = "AQ.Ab8RN6L2JIocICPleh9pnFP0GY2zQuTKtw9n_CVmLD9fy_H4Yg";
+  const handleLogin = () => {
+    if (userId.trim()) setIsLoggedIn(true);
+  };
 
-    async function sendMessage() {
-      const inputField = document.getElementById("user-input");
-      const chatBox = document.getElementById("chat-box");
-      const question = inputField.value.trim();
+  if (!isLoggedIn) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>تطبيق المكالمات والشات</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="أدخل الـ ID الخاص بك"
+            placeholderTextColor="#888"
+            value={userId}
+            onChangeText={setUserId}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>تسجيل الدخول</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-      if (!question) return;
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {activeTab === 'chats' && (
+          <ScrollView>
+            <Text style={styles.headerTitle}>الرسائل</Text>
+            <View style={styles.itemCard}><Text style={styles.itemText}>محادثة مع المستخدم: #1023</Text></View>
+          </ScrollView>
+        )}
+        {activeTab === 'calls' && (
+          <ScrollView>
+            <Text style={styles.headerTitle}>المكالمات</Text>
+            <View style={styles.itemCard}><Text style={styles.itemText}>مكالمة فائتة من: #4582</Text></View>
+          </ScrollView>
+        )}
+        {activeTab === 'search' && (
+          <View>
+            <Text style={styles.headerTitle}>بحث عن ID</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="ابحث برقم الـ ID..."
+              placeholderTextColor="#888"
+              value={searchId}
+              onChangeText={setSearchId}
+            />
+            <TouchableOpacity style={styles.button}><Text style={styles.buttonText}>بحث</Text></TouchableOpacity>
+          </View>
+        )}
+      </View>
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => setActiveTab('chats')}><Text style={[styles.navText, activeTab === 'chats' && styles.activeNav]} >الرسائل</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab('calls')}><Text style={[styles.navText, activeTab === 'calls' && styles.activeNav]}>المكالمات</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab('search')}><Text style={[styles.navText, activeTab === 'search' && styles.activeNav]}>بحث ID</Text></TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
 
-      chatBox.innerHTML += `<div class="bg-emerald-800 p-3 rounded-lg max-w-xs text-left self-end mr-auto">${question}</div>`;
-      inputField.value = "";
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{ text: `أنت مساعد ذكي. أجب عن السؤال التالي في سطر واحد فقط لا غير ويكون مباشر وبالمغربية إن أمكن: ${question}` }]
-            }]
-          })
-        });
-
-        const data = await response.json();
-        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "وقع خطأ، تأكد من الاتصال.";
-
-        chatBox.innerHTML += `<div class="bg-gray-700 p-3 rounded-lg max-w-xs text-right self-start">${answer}</div>`;
-      } catch (error) {
-        chatBox.innerHTML += `<div class="bg-red-900 p-3 rounded-lg max-w-xs text-right self-start">مشكل فالتطابق مع الـ API</div>`;
-      }
-
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-  </script>
-</body>
-</html>
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#121212', justifyContent: 'center' },
+  card: { padding: 20, margin: 20, backgroundColor: '#1e1e1e', borderRadius: 10 },
+  title: { fontSize: 22, color: '#fff', textAlign: 'center', marginBottom: 20, fontWeight: 'bold' },
+  input: { backgroundColor: '#2c2c2c', color: '#fff', padding: 15, borderRadius: 8, marginBottom: 15 },
+  button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  content: { flex: 1, padding: 20 },
+  headerTitle: { fontSize: 20, color: '#fff', marginBottom: 15, fontWeight: 'bold' },
+  itemCard: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 8, marginBottom: 10 },
+  itemText: { color: '#fff' },
+  navBar: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#1e1e1e', paddingVertical: 15 },
+  navText: { color: '#888', fontSize: 16 },
+  activeNav: { color: '#007AFF', fontWeight: 'bold' }
+});
