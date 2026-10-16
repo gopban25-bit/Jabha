@@ -5,25 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mobile App Login</title>
     <style>
-        * {
-            box-sizing: border-box;
+        /* قفل الصفحة بالكامل لمنع أي تحريك أو سحب (Scroll/Bounce) */
+        html, body {
             margin: 0;
             padding: 0;
-        }
-
-        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            touch-action: none;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #030303;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
         }
 
-        /* خلفية دخانية متحركة بانسيابية باللونين الأحمر والأصفر */
+        /* الخلفية الدخانية المتحركة بانسيابية بالأحمر والأصفر */
         .smoke-background {
             position: absolute;
             inset: -50%;
@@ -52,14 +47,13 @@
         }
 
         .phone-container {
-            width: 100%;
-            max-width: 400px;
-            height: 100%;
-            max-height: 800px;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         .login-card {
@@ -68,8 +62,9 @@
             -webkit-backdrop-filter: blur(25px);
             border: 2px solid rgba(255, 255, 255, 0.9);
             border-radius: 32px;
-            padding: 45px 30px;
+            padding: 40px 25px;
             width: 100%;
+            max-width: 360px;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7),
                         inset 0 0 20px rgba(255, 255, 255, 0.2),
                         0 0 35px rgba(255, 255, 255, 0.3);
@@ -87,20 +82,20 @@
         }
 
         .login-card p {
-            margin: 0 0 35px 0;
+            margin: 0 0 30px 0;
             font-size: 14px;
             color: rgba(255, 255, 255, 0.7);
         }
 
         .input-group {
             position: relative;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
 
         /* إطار الخانة ذهبي مضيء وبشكل مستقل */
         .input-group input {
             width: 100%;
-            padding: 16px 45px 16px 16px;
+            padding: 15px 45px 15px 15px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid #ffd700;
             border-radius: 16px;
@@ -145,7 +140,7 @@
 
         .login-btn {
             width: 100%;
-            padding: 16px;
+            padding: 15px;
             background: linear-gradient(135deg, #ffc107 0%, #d50000 100%);
             border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 16px;
@@ -156,7 +151,7 @@
             transition: all 0.3s ease;
             text-align: center;
             box-shadow: 0 5px 20px rgba(255, 193, 7, 0.3);
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         .login-btn:hover {
@@ -176,7 +171,7 @@
             <h2>𝐋𝐨𝐠𝐢𝐧</h2>
             <p>Welcome back</p>
             
-            <form>
+            <form onsubmit="event.preventDefault();">
                 <div class="input-group">
                     <input type="email" placeholder="Email Address" required>
                     <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
