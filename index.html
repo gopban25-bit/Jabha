@@ -1,51 +1,146 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق المكالمات</title>
+    <title>Login</title>
     <style>
-        body { background-color: #121212; color: #ffffff; font-family: Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #1e1e1e; padding: 25px; border-radius: 12px; width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center; }
-        input { width: 100%; padding: 12px; margin: 15px 0; background: #2c2c2c; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background: #007AFF; border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .hidden { display: none; }
-        h2 { margin-bottom: 20px; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb'); /* خلفية طبيعية مشابهة للصورة */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px 30px;
+            border-radius: 20px;
+            width: 330px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            text-align: left;
+        }
+        .login-card h2 {
+            margin: 0 0 5px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .login-card p {
+            margin: 0 0 30px 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 15px;
+            padding-right: 40px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .input-group input:focus {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .remember-me {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .remember-me input {
+            margin-right: 8px;
+            accent-color: #4CAF50;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #cddc39 0%, #4caf50 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            transition: 0.3s;
+        }
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+        .signup-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .signup-text a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer-credit {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
-    <div class="box" id="loginBox">
-        <h2>تسجيل الدخول</h2>
-        <input type="text" id="userId" placeholder="أدخل الـ ID الخاص بك">
-        <button onclick="login()">دخول</button>
+    <div class="login-card">
+        <h2>Login</h2>
+        <p>Welcome back please login to your account</p>
+        
+        <form>
+            <div class="input-group">
+                <input type="text" placeholder="User Name" required>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" placeholder="Password" required>
+            </div>
+            
+            <div class="remember-me">
+                <input type="checkbox" id="remember">
+                <label for="remember">Remember me</label>
+            </div>
+            
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+
+        <div class="signup-text">
+            Don't have an account? <a href="#">Signup</a>
+        </div>
+
+        <div class="footer-credit">
+            Created by anggidwiiputra
+        </div>
     </div>
-
-    <div class="box hidden" id="appBox">
-        <h2 id="welcomeText">مرحباً بك</h2>
-        <p>تم تسجيل الدخول بنجاح!</p>
-        <button onclick="logout()" style="background: #ff3b30;">خروج</button>
-    </div>
-
-    <script>
-        function login() {
-            const id = document.getElementById('userId').value.trim();
-            if (id !== "") {
-                document.getElementById('welcomeText').innerText = "مرحباً، ID: " + id;
-                document.getElementById('loginBox').classList.add('hidden');
-                document.getElementById('appBox').classList.remove('hidden');
-            } else {
-                alert('المرجو إدخال الـ ID أولاً!');
-            }
-        }
-
-        function logout() {
-            document.getElementById('userId').value = "";
-            document.getElementById('appBox').classList.add('hidden');
-            document.getElementById('loginBox').classList.remove('hidden');
-        }
-    </script>
 
 </body>
 </html>
