@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Next-Gen Glass Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile App Login</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,58 +13,64 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #050505;
+            background-color: #030303;
             height: 100vh;
+            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: hidden; /* منع التمرير نهائياً */
             position: relative;
         }
 
-        /* خلفية دخانية متحركة باللونين الأحمر والأخضر بطريقة هادئة وساحرة */
+        /* الخلفية الدخانية المتحركة بالأحمر والأخضر */
         .smoke-background {
             position: absolute;
             inset: -50%;
             width: 200%;
             height: 200%;
             background: 
-                radial-gradient(circle at 30% 40%, rgba(0, 230, 118, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 70% 60%, rgba(255, 23, 68, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 50% 30%, rgba(0, 200, 83, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 60% 80%, rgba(213, 0, 0, 0.2) 0%, transparent 50%);
+                radial-gradient(circle at 30% 40%, rgba(0, 230, 118, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(255, 23, 68, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 30%, rgba(0, 200, 83, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 60% 80%, rgba(213, 0, 0, 0.25) 0%, transparent 50%);
             filter: blur(80px);
             z-index: -1;
             animation: smokeAnimation 15s ease infinite alternate;
         }
 
         @keyframes smokeAnimation {
-            0% {
-                transform: translate(0, 0) scale(1) rotate(0deg);
-            }
-            50% {
-                transform: translate(-5%, 5%) scale(1.1) rotate(5deg);
-            }
-            100% {
-                transform: translate(5%, -5%) scale(1.05) rotate(-5deg);
-            }
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            50% { transform: translate(-5%, 5%) scale(1.1) rotate(5deg); }
+            100% { transform: translate(5%, -5%) scale(1.05) rotate(-5deg); }
         }
 
-        /* إطار أبيض كيبان بحال صباغة عصرية وشفافة */
+        /* حاوية بحجم شاشة الهاتف تماماً بدون Scroll */
+        .phone-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 800px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* إطار تسجيل الدخول بالأبيض كأنه صباغة عصرية */
         .login-card {
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
-            border: 2px solid rgba(255, 255, 255, 0.85);
-            border-radius: 28px;
-            padding: 45px 35px;
-            width: 360px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6),
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 32px;
+            padding: 40px 30px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7),
                         inset 0 0 20px rgba(255, 255, 255, 0.2),
-                        0 0 30px rgba(255, 255, 255, 0.3);
+                        0 0 35px rgba(255, 255, 255, 0.3);
             color: #ffffff;
             text-align: left;
-            position: relative;
         }
 
         .login-card h2 {
@@ -76,24 +82,24 @@
         }
 
         .login-card p {
-            margin: 0 0 30px 0;
+            margin: 0 0 35px 0;
             font-size: 14px;
             color: rgba(255, 255, 255, 0.7);
         }
 
         .input-group {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
         }
 
         .input-group input {
             width: 100%;
-            padding: 15px 45px 15px 15px;
+            padding: 16px 45px 16px 16px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 14px;
+            border-radius: 16px;
             color: #fff;
-            font-size: 14px;
+            font-size: 15px;
             outline: none;
             transition: all 0.3s ease;
         }
@@ -110,7 +116,7 @@
 
         .input-group svg {
             position: absolute;
-            right: 15px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
             width: 20px;
@@ -118,18 +124,12 @@
             fill: rgba(255, 255, 255, 0.7);
         }
 
-        .remember-me {
-            font-size: 13px;
-            margin-bottom: 25px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
         .login-btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             background: linear-gradient(135deg, #00e676 0%, #d50000 100%);
             border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 14px;
+            border-radius: 16px;
             color: white;
             font-size: 16px;
             font-weight: 700;
@@ -137,6 +137,7 @@
             transition: all 0.3s ease;
             text-align: center;
             box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
+            margin-top: 10px;
         }
 
         .login-btn:hover {
@@ -147,7 +148,7 @@
 
         .signup-text {
             text-align: center;
-            margin-top: 25px;
+            margin-top: 30px;
             font-size: 13px;
             color: rgba(255, 255, 255, 0.7);
         }
@@ -161,33 +162,31 @@
 </head>
 <body>
 
-    <!-- الخلفية التي تحتوي على حركة الدخان بالأحمر والأخضر -->
+    <!-- الخلفية الدخانية المتحركة -->
     <div class="smoke-background"></div>
 
-    <div class="login-card">
-        <h2>Login</h2>
-        <p>Welcome back</p>
-        
-        <form>
-            <div class="input-group">
-                <input type="text" placeholder="User Name" required>
-                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            </div>
+    <div class="phone-container">
+        <div class="login-card">
+            <h2>Login</h2>
+            <p>Welcome back</p>
             
-            <div class="input-group">
-                <input type="password" placeholder="Password" required>
-                <svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/></svg>
-            </div>
-            
-            <div class="remember-me">
-                Remember me
-            </div>
-            
-            <button type="submit" class="login-btn">Login</button>
-        </form>
+            <form>
+                <div class="input-group">
+                    <input type="email" placeholder="Email Address" required>
+                    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                </div>
+                
+                <div class="input-group">
+                    <input type="password" placeholder="Password" required>
+                    <svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/></svg>
+                </div>
+                
+                <button type="submit" class="login-btn">Login</button>
+            </form>
 
-        <div class="signup-text">
-            Don't have an account? <a href="#">Signup</a>
+            <div class="signup-text">
+                Don't have an account? <a href="#">Signup</a>
+            </div>
         </div>
     </div>
 
