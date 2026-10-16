@@ -1,86 +1,83 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق المكالمات والشات</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { width: 100%; max-width: 400px; height: 100%; background: #1e1e1e; display: flex; flex-direction: column; justify-content: space-between; }
+        .screen { padding: 20px; flex: 1; display: none; overflow-y: auto; }
+        .active { display: block; }
+        .title { font-size: 22px; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        input { width: 100%; background: #2c2c2c; color: #fff; border: none; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 16px; }
+        .button { width: 100%; background: #007AFF; color: #fff; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
+        .nav-bar { display: flex; justify-content: space-around; background: #1a1a1a; padding: 15px 0; border-top: 1px solid #333; }
+        .nav-item { color: #888; cursor: pointer; font-size: 15px; }
+        .nav-item.active-nav { color: #007AFF; font-weight: bold; }
+        .item-card { background: #2c2c2c; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
 
-export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('chats');
-  const [userId, setUserId] = useState('');
-  const [searchId, setSearchId] = useState('');
+<div class="container">
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginScreen" class="screen active" style="display: flex; flex-direction: column; justify-content: center;">
+        <div class="title">تسجيل الدخول</div>
+        <input type="text" id="userIdInput" placeholder="أدخل الـ ID الخاص بك">
+        <button class="button" onclick="login()">دخول</button>
+    </div>
 
-  const handleLogin = () => {
-    if (userId.trim()) setIsLoggedIn(true);
-  };
+    <!-- المحتوى الرئيسي (بعد الدخول) -->
+    <div id="appContent" class="screen">
+        <!-- قسم الرسائل -->
+        <div id="chatsTab" class="tab-content">
+            <div class="title">الرسائل</div>
+            <div class="item-card">محادثة مع المستخدم: #1023</div>
+        </div>
 
-  if (!isLoggedIn) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>تطبيق المكالمات والشات</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="أدخل الـ ID الخاص بك"
-            placeholderTextColor="#888"
-            value={userId}
-            onChangeText={setUserId}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>تسجيل الدخول</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+        <!-- قسم المكالمات -->
+        <div id="callsTab" class="tab-content" style="display: none;">
+            <div class="title">المكالمات</div>
+            <div class="item-card">مكالمة فائتة من: #4582</div>
+        </div>
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {activeTab === 'chats' && (
-          <ScrollView>
-            <Text style={styles.headerTitle}>الرسائل</Text>
-            <View style={styles.itemCard}><Text style={styles.itemText}>محادثة مع المستخدم: #1023</Text></View>
-          </ScrollView>
-        )}
-        {activeTab === 'calls' && (
-          <ScrollView>
-            <Text style={styles.headerTitle}>المكالمات</Text>
-            <View style={styles.itemCard}><Text style={styles.itemText}>مكالمة فائتة من: #4582</Text></View>
-          </ScrollView>
-        )}
-        {activeTab === 'search' && (
-          <View>
-            <Text style={styles.headerTitle}>بحث عن ID</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="ابحث برقم الـ ID..."
-              placeholderTextColor="#888"
-              value={searchId}
-              onChangeText={setSearchId}
-            />
-            <TouchableOpacity style={styles.button}><Text style={styles.buttonText}>بحث</Text></TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <View style={styles.navBar}>
-        <TouchableOpacity onPress={() => setActiveTab('chats')}><Text style={[styles.navText, activeTab === 'chats' && styles.activeNav]} >الرسائل</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('calls')}><Text style={[styles.navText, activeTab === 'calls' && styles.activeNav]}>المكالمات</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('search')}><Text style={[styles.navText, activeTab === 'search' && styles.activeNav]}>بحث ID</Text></TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
+        <!-- قسم البحث -->
+        <div id="searchTab" class="tab-content" style="display: none;">
+            <div class="title">بحث عن ID</div>
+            <input type="text" placeholder="ابحث برقم الـ ID...">
+            <button class="button">بحث</button>
+        </div>
+    </div>
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212', justifyContent: 'center' },
-  card: { padding: 20, margin: 20, backgroundColor: '#1e1e1e', borderRadius: 10 },
-  title: { fontSize: 22, color: '#fff', textAlign: 'center', marginBottom: 20, fontWeight: 'bold' },
-  input: { backgroundColor: '#2c2c2c', color: '#fff', padding: 15, borderRadius: 8, marginBottom: 15 },
-  button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  content: { flex: 1, padding: 20 },
-  headerTitle: { fontSize: 20, color: '#fff', marginBottom: 15, fontWeight: 'bold' },
-  itemCard: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 8, marginBottom: 10 },
-  itemText: { color: '#fff' },
-  navBar: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#1e1e1e', paddingVertical: 15 },
-  navText: { color: '#888', fontSize: 16 },
-  activeNav: { color: '#007AFF', fontWeight: 'bold' }
-});
+    <!-- الشريط السفلي -->
+    <div id="navBar" class="nav-bar" style="display: none;">
+        <div class="nav-item active-nav" onclick="switchTab('chats', this)">الرسائل</div>
+        <div class="nav-item" onclick="switchTab('calls', this)">المكالمات</div>
+        <div class="nav-item" onclick="switchTab('search', this)">بحث ID</div>
+    </div>
+</div>
+
+<script>
+    function login() {
+        const id = document.getElementById('userIdInput').value;
+        if(id.trim() !== "") {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContent').classList.add('active');
+            document.getElementById('navBar').style.display = 'flex';
+        } else {
+            alert('المرجو إدخال الـ ID');
+        }
+    }
+
+    function switchTab(tabName, element) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.getElementById(tabName + 'Tab').style.display = 'block';
+        
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav'));
+        element.classList.add('active-nav');
+    }
+</script>
+
+</body>
+</html>
