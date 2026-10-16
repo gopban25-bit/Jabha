@@ -23,26 +23,32 @@
             position: relative;
         }
 
-        /* الخلفية الدخانية المتحركة بالأحمر والأخضر */
+        /* خلفية دخانية متحركة بانسيابية عالية باللونين الأحمر والأخضر */
         .smoke-background {
             position: absolute;
             inset: -50%;
             width: 200%;
             height: 200%;
             background: 
-                radial-gradient(circle at 30% 40%, rgba(0, 230, 118, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 70% 60%, rgba(255, 23, 68, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 50% 30%, rgba(0, 200, 83, 0.2) 0%, transparent 40%),
-                radial-gradient(circle at 60% 80%, rgba(213, 0, 0, 0.25) 0%, transparent 50%);
-            filter: blur(80px);
+                radial-gradient(circle at 30% 40%, rgba(0, 230, 118, 0.35) 0%, transparent 55%),
+                radial-gradient(circle at 70% 60%, rgba(255, 23, 68, 0.35) 0%, transparent 55%),
+                radial-gradient(circle at 50% 25%, rgba(0, 200, 83, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 65% 75%, rgba(213, 0, 0, 0.3) 0%, transparent 50%);
+            filter: blur(90px);
             z-index: -1;
-            animation: smokeAnimation 15s ease infinite alternate;
+            animation: fluidSmoke 18s ease-in-out infinite alternate;
         }
 
-        @keyframes smokeAnimation {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-            50% { transform: translate(-5%, 5%) scale(1.1) rotate(5deg); }
-            100% { transform: translate(5%, -5%) scale(1.05) rotate(-5deg); }
+        @keyframes fluidSmoke {
+            0% {
+                transform: translate(-3%, -3%) scale(1) rotate(0deg);
+            }
+            50% {
+                transform: translate(4%, 4%) scale(1.12) rotate(8deg);
+            }
+            100% {
+                transform: translate(-2%, 3%) scale(1.05) rotate(-6deg);
+            }
         }
 
         .phone-container {
@@ -62,7 +68,7 @@
             -webkit-backdrop-filter: blur(25px);
             border: 2px solid rgba(255, 255, 255, 0.9);
             border-radius: 32px;
-            padding: 40px 30px;
+            padding: 45px 30px;
             width: 100%;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7),
                         inset 0 0 20px rgba(255, 255, 255, 0.2),
@@ -135,7 +141,7 @@
             transition: all 0.3s ease;
             text-align: center;
             box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
         .login-btn:hover {
@@ -143,36 +149,11 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(255, 23, 68, 0.4);
         }
-
-        /* تنسيق قسم اختيار اللغة */
-        .language-switcher {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-top: 30px;
-            font-size: 14px;
-        }
-
-        .lang-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff;
-            padding: 6px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.3s;
-        }
-
-        .lang-btn:hover, .lang-btn.active {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: #ffffff;
-        }
     </style>
 </head>
 <body>
 
+    <!-- الخلفية الدخانية المتحركة بانسيابية -->
     <div class="smoke-background"></div>
 
     <div class="phone-container">
@@ -193,24 +174,8 @@
                 
                 <button type="submit" class="login-btn">Login</button>
             </form>
-
-            <!-- زر اختيار اللغة -->
-            <div class="language-switcher">
-                <button class="lang-btn active" onclick="setLanguage('en')">English</button>
-                <button class="lang-btn" onclick="setLanguage('ar')">العربية</button>
-            </div>
         </div>
     </div>
-
-    <script>
-        function setLanguage(lang) {
-            const btns = document.querySelectorAll('.lang-btn');
-            btns.forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // هنا تقدر تزيد كود تبديل النصوص لاحقاً ila بغيتي
-        }
-    </script>
 
 </body>
 </html>
