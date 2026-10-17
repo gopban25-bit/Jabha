@@ -65,6 +65,7 @@
             color: #ffffff;
             text-align: left;
             overflow: hidden;
+            position: relative;
         }
 
         .login-card h2 {
@@ -129,7 +130,7 @@
             100% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 1)); }
         }
 
-        /* حاوية الزر لخلق تأثير الإطار المتحرك (Animated Gradient Border) */
+        /* الإطار المتحرك للزر */
         .btn-wrapper {
             position: relative;
             width: 100%;
@@ -167,6 +168,27 @@
             box-shadow: 0 0 25px rgba(255, 23, 68, 0.7);
             transform: translateY(-2px);
         }
+
+        /* رسالة الإشعار عند تسجيل الدخول أو ظهور خطأ */
+        .message-box {
+            margin-top: 15px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            padding: 10px;
+            border-radius: 10px;
+            word-break: break-word;
+        }
+        .message-box.error {
+            background: rgba(255, 23, 68, 0.2);
+            border: 1px solid rgba(255, 23, 68, 0.6);
+            color: #ff8a80;
+        }
+        .message-box.success {
+            background: rgba(0, 230, 118, 0.2);
+            border: 1px solid rgba(0, 230, 118, 0.6);
+            color: #b9f6ca;
+        }
     </style>
 </head>
 <body>
@@ -178,23 +200,99 @@
             <h2>𝐋𝐨𝐠𝐢𝐧</h2>
             <p>Welcome back</p>
             
-            <form onsubmit="event.preventDefault();">
+            <form id="loginForm">
                 <div class="input-group">
-                    <input type="email" placeholder="Email Address" required>
+                    <input type="email" id="email" placeholder="Email Address" required>
                     <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                 </div>
                 
                 <div class="input-group">
-                    <input type="password" placeholder="Password" required>
+                    <input type="password" id="password" placeholder="Password" required>
                     <svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/></svg>
                 </div>
                 
                 <div class="btn-wrapper">
-                    <button type="submit" class="login-btn">Login</button>
+                    <button type="submit" id="submitBtn" class="login-btn">Login</button>
                 </div>
             </form>
+
+            <div id="messageBox" class="message-box"></div>
         </div>
     </div>
+
+    <!-- ربط Firebase JS SDK (v10 Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // إعدادات Firebase الخاصة بك
+        const firebaseConfig = {
+            apiKey: "AIzaSyARPqKI8r2GYPn1xKy3M7m7ZE3d5Wgq7uY",
+            authDomain: "whatsapp-41877.firebaseapp.com",
+            projectId: "whatsapp-41877",
+            storageBucket: "whatsapp-41877.firebasestorage.app",
+            messagingSenderId: "581714425078",
+            appId: "1:581714425078:web:a9ae487cc38f18d865e8d7",
+            measurementId: "G-SET3RQG2G8"
+        };
+
+        // تهيئة Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // العناصر
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const submitBtn = document.getElementById('submitBtn');
+        const messageBox = document.getElementById('messageBox');
+
+        // معالجة الضغط على زر تسجيل الدخول
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // تغيير حالة الزر أثناء التحميل
+            submitBtn.textContent = 'Authenticating...';
+            submitBtn.disabled = true;
+            messageBox.style.display = 'none';
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                // عند نجاح تسجيل الدخول
+                showMessage('Login successful! Redirecting...', 'success');
+                
+                // يمكنك توجيه المستخدم لصفحة الشات الرئيسية هنا لاحقاً
+                // window.location.href = "chat.html";
+
+            } catch (error) {
+                // التعامل مع الأخطاء المختلفة
+                let errorText = "Failed to login. Please try again.";
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    errorText = "Incorrect Email or Password.";
+                } else if (error.code === 'auth/invalid-email') {
+                    errorText = "Please enter a valid email address.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorText = "Too many attempts. Try again later.";
+                }
+                
+                showMessage(errorText, 'error');
+            } finally {
+                submitBtn.textContent = 'Login';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageBox.textContent = msg;
+            messageBox.className = `message-box ${type}`;
+            messageBox.style.display = 'block';
+        }
+    </script>
 
 </body>
 </html>
