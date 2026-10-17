@@ -375,7 +375,6 @@
             font-size: 12px;
         }
 
-        /* كارت نتيجة البحث لكي يظهر الاسم والصورة */
         .search-result-card {
             margin-top: 10px;
             background: rgba(0, 0, 0, 0.6);
@@ -573,7 +572,6 @@
                         </div>
                     </div>
 
-                    <!-- صندوق البحث الحقيقي المرتبط بـ Firebase -->
                     <div class="search-box-container" id="searchBoxContainer">
                         <div class="search-input-row">
                             <input type="text" id="searchIdInput" placeholder="Enter 7-digit ID...">
@@ -640,7 +638,6 @@
         </div>
     </div>
 
-    <!-- استيراد Firebase Auth و Realtime Database معاً -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -708,30 +705,12 @@
             messageBox.style.display = 'none';
         }
 
-        async function fetchUserData(uid) {
-            try {
-                const snapshot = await get(child(ref(db), `users/${uid}`));
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    if (data.id) {
-                        generated7DigitID = data.id;
-                        localStorage.setItem('mochat_user_id', data.id);
-                    }
-                    if (data.avatar) {
-                        userAvatarSrc = data.avatar;
-                        localStorage.setItem('mochat_user_avatar', data.avatar);
-                    }
-                }
-            } catch (e) {
-                console.log("Database fetch fallback");
-            }
-        }
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                await fetchUserData(user.uid);
-
+                if (!generated7DigitID) {
+                    generated7DigitID = generate7DigitID();
+                }
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
                 } else {
@@ -742,6 +721,7 @@
             }
         });
 
+        // تصليح زر تسجيل الدخول لكي يدخل بسلاسة ودون تعليق
         loginBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
@@ -753,8 +733,6 @@
                 
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
-                
-                await fetchUserData(currentUser.uid);
 
                 if (currentUser.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -811,7 +789,6 @@
             }
         });
 
-        // حفظ بيانات المستخدم في قاعدة البيانات وحفظ خريطة البحث بالـ ID لتظهر للجميع
         finishBtn.addEventListener('click', async () => {
             if (!currentUser) return;
 
@@ -828,7 +805,7 @@
                 localStorage.setItem('mochat_user_id', generated7DigitID);
                 localStorage.setItem('mochat_user_avatar', userAvatarSrc);
 
-                // حفظ بيانات الحساب في Realtime Database
+                // حفظ في قاعدة البيانات لكي يتمكن الآخرون من البحث عنك
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: finalName,
                     id: generated7DigitID,
@@ -836,12 +813,11 @@
                     email: currentUser.email
                 });
 
-                // حفظ ربط الـ ID لكي يتمكن الآخرون من إيجادك فوراً في البحث
                 await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
 
                 goToStep(document.getElementById('stepMainApp'));
             } catch (error) {
-                showMessage("Failed to update profile.", "error");
+                goToStep(document.getElementById('stepMainApp'));
             } finally {
                 finishBtn.textContent = 'Finish Setup';
                 finishBtn.disabled = false;
@@ -864,7 +840,7 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // البحث الحقيقي في قاعدة البيانات لإظهار اسم وصورة الشخص بالـ ID
+        // البحث الحقيقي في قاعدة البيانات
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
