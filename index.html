@@ -705,14 +705,13 @@
             messageBox.style.display = 'none';
         }
 
-        // جلب الـ ID والصورة الخاصة حصرياً بالمستخدم المسجل حالياً من Firebase عبر الـ UID ديالو
-        function loadUserDataForCurrentAccount(uid) {
-            activeUserRealID = null;
+        // التحقق من قاعدة البيانات لجلب الـ ID الثابت الخاص بالمستخدم بدقة
+        function fetchUserData(uid) {
             get(child(ref(db), `users/${uid}`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     if (data.id) {
-                        activeUserRealID = data.id;
+                        activeUserRealID = data.id; // تثبيت الـ ID القديم الخاص بهذا الحساب
                     }
                     if (data.avatar) {
                         activeUserAvatarSrc = data.avatar;
@@ -721,6 +720,7 @@
                         usernameInput.value = data.name;
                     }
                 } else {
+                    // إذا كان الحساب جديداً وليس لديه ID في القاعدة، ننشئ له ID جديد
                     activeUserRealID = generate7DigitID();
                 }
             }).catch(() => {
@@ -733,11 +733,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                loadUserDataForCurrentAccount(user.uid);
-
-                if (!activeUserRealID) {
-                    activeUserRealID = generate7DigitID();
-                }
+                fetchUserData(user.uid);
 
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -763,10 +759,7 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
 
-                loadUserDataForCurrentAccount(currentUser.uid);
-                if (!activeUserRealID) {
-                    activeUserRealID = generate7DigitID();
-                }
+                fetchUserData(currentUser.uid);
 
                 if (currentUser.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -791,7 +784,7 @@
                 signupBtn.disabled = true;
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
-                activeUserRealID = generate7DigitID(); // توليد ID جديد وفريد حصرياً هاد الحساب الجديد
+                activeUserRealID = generate7DigitID(); // توليد ID حصري للحساب الجديد
                 goToStep(document.getElementById('stepName'));
             } catch (error) {
                 handleError(error);
@@ -841,7 +834,7 @@
                     activeUserRealID = generate7DigitID();
                 }
 
-                // تخزين ملف وحساب المستخدم مرتبط بـ UID دياله حصرياً في قاعدة البيانات
+                // حفظ البيانات وربط الـ ID الثابت بملف المستخدم
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: finalName,
                     id: activeUserRealID,
@@ -849,7 +842,6 @@
                     email: currentUser.email
                 });
 
-                // ربط الـ ID بالـ UID باش البحث يرجع هاد الحساب بدقة
                 await set(ref(db, 'idMapping/' + activeUserRealID), currentUser.uid);
 
                 goToStep(document.getElementById('stepMainApp'));
@@ -877,7 +869,6 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // ميزة البحث بالـ ID لجلب الاسم والصورة الحقيقيين لأي حساب في قاعدة البيانات
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
