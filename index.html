@@ -216,9 +216,9 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            position: relative;
         }
 
-        /* الهيدر الجديد البسيط باسم Mochat */
         .app-header {
             display: flex;
             align-items: center;
@@ -226,6 +226,7 @@
             margin-bottom: 15px;
             border-bottom: 1px solid rgba(255, 215, 0, 0.25);
             padding-bottom: 12px;
+            position: relative;
         }
 
         .app-title {
@@ -237,6 +238,172 @@
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
             margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* زر البحث الجديد (عدسة المكبرة) */
+        .search-icon-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 10px;
+            padding: 6px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .search-icon-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: #ffd700;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 10px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 32px;
+            height: 32px;
+            box-sizing: border-box;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 16px;
+            height: 2px;
+            background-color: #ffd700;
+            border-radius: 2px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 12px;
+            width: 150px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+            display: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 15px;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.2s;
+            font-weight: 600;
+        }
+
+        .dropdown-item.profile-item {
+            color: #ffd700;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-item.profile-item:hover {
+            background: rgba(255, 215, 0, 0.15);
+        }
+
+        .dropdown-item.logout-item {
+            color: #ff5252;
+        }
+
+        .dropdown-item.logout-item:hover {
+            background: rgba(255, 23, 68, 0.15);
+        }
+
+        /* واجهة البحث بالـ ID */
+        .search-box-container {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-box-container.active {
+            display: block;
+        }
+
+        .search-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-input-row input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #ffd700;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .search-action-btn {
+            background: #ffd700;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: bold;
+            padding: 0 12px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* واجهة حسابي الشخصي */
+        .profile-card-details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 10px;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .profile-card-avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-card-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 5px 0 0 0;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
         }
 
         .tab-content {
@@ -252,7 +419,7 @@
         .tab-pane-placeholder {
             text-align: center;
             color: rgba(255, 255, 255, 0.5);
-            margin-top: 50px;
+            margin-top: 30px;
             font-size: 14px;
         }
 
@@ -310,6 +477,7 @@
     <div class="phone-container">
         <div class="login-card">
             
+            <!-- الخطوة 1: تسجيل الدخول / إنشاء حساب -->
             <div id="stepAuth" class="step active">
                 <h2>𝐋𝐨𝐠𝐢𝐧</h2>
                 <p>Welcome back</p>
@@ -332,6 +500,7 @@
                 </div>
             </div>
 
+            <!-- الخطوة 2: إدخال الاسم -->
             <div id="stepName" class="step">
                 <h2>Your Name</h2>
                 <p>What should we call you?</p>
@@ -346,6 +515,7 @@
                 </div>
             </div>
 
+            <!-- الخطوة 3: اختيار الصورة -->
             <div id="stepAvatar" class="step">
                 <h2>Profile Picture</h2>
                 <p>Choose an avatar for your profile</p>
@@ -368,7 +538,35 @@
                 <div class="main-app-container">
                     <div class="app-header">
                         <h1 class="app-title">Mochat</h1>
-                        <span style="font-size:12px; color:#00e676; font-weight:bold;">● Active</span>
+                        
+                        <div class="header-actions">
+                            <!-- زر البحث بالـ ID -->
+                            <button class="search-icon-btn" id="searchIconBtn" title="Search ID">
+                                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            </button>
+
+                            <!-- زر 3 شرطات -->
+                            <div style="position: relative;">
+                                <button class="menu-btn" id="menuBtn">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </button>
+                                <div class="dropdown-menu" id="dropdownMenu">
+                                    <div class="dropdown-item profile-item" id="myProfileOption">My Profile</div>
+                                    <div class="dropdown-item logout-item" id="logoutBtn">Logout</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- صندوق إدخال البحث بالـ ID -->
+                    <div class="search-box-container" id="searchBoxContainer">
+                        <div class="search-input-row">
+                            <input type="text" id="searchIdInput" placeholder="Enter 7-digit ID...">
+                            <button class="search-action-btn" id="searchIdBtn">Search</button>
+                        </div>
+                        <div id="searchResultMsg" style="font-size: 11px; margin-top: 6px; color: #ffd700; text-align: center;"></div>
                     </div>
 
                     <div id="tabChats" class="tab-content active">
@@ -403,13 +601,29 @@
                 </div>
             </div>
 
+            <!-- واجهة حسابي الشخصي -->
+            <div id="stepProfileView" class="step">
+                <h2>My Profile</h2>
+                <p>Your Account Details</p>
+
+                <div class="profile-card-details">
+                    <img id="cardProfileAvatar" class="profile-card-avatar" src="https://via.placeholder.com/150/000000/FFD700?text=User" alt="Avatar">
+                    <h3 id="cardProfileName" class="profile-card-name">User Name</h3>
+                    <div id="cardProfileId" class="id-badge">ID: ------</div>
+                </div>
+
+                <div class="btn-wrapper" style="margin-top: auto;">
+                    <button type="button" id="backToMainBtn" class="login-btn">Back to Chats</button>
+                </div>
+            </div>
+
             <div id="messageBox" class="message-box"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyARPqKI8r2GYPn1xKy3M7m7ZE3d5Wgq7uY",
@@ -436,9 +650,26 @@
         const saveNameBtn = document.getElementById('saveNameBtn');
         const finishBtn = document.getElementById('finishBtn');
         const messageBox = document.getElementById('messageBox');
+        
+        const menuBtn = document.getElementById('menuBtn');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const myProfileOption = document.getElementById('myProfileOption');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        const searchIconBtn = document.getElementById('searchIconBtn');
+        const searchBoxContainer = document.getElementById('searchBoxContainer');
+        const searchIdInput = document.getElementById('searchIdInput');
+        const searchIdBtn = document.getElementById('searchIdBtn');
+        const searchResultMsg = document.getElementById('searchResultMsg');
+
+        const cardProfileAvatar = document.getElementById('cardProfileAvatar');
+        const cardProfileName = document.getElementById('cardProfileName');
+        const cardProfileId = document.getElementById('cardProfileId');
+        const backToMainBtn = document.getElementById('backToMainBtn');
 
         let currentUser = null;
         let generated7DigitID = null;
+        let userAvatarSrc = "https://via.placeholder.com/150/000000/FFD700?text=User";
 
         function generate7DigitID() {
             return Math.floor(1000000 + Math.random() * 9000000).toString();
@@ -456,6 +687,8 @@
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
                 }
+            } else {
+                goToStep(document.getElementById('stepAuth'));
             }
         });
 
@@ -505,7 +738,8 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    avatarPreview.src = e.target.result;
+                    userAvatarSrc = e.target.result;
+                    avatarPreview.src = userAvatarSrc;
                 }
                 reader.readAsDataURL(file);
             }
@@ -528,6 +762,59 @@
             } finally {
                 finishBtn.textContent = 'Finish Setup';
                 finishBtn.disabled = false;
+            }
+        });
+
+        // فتح وإغلاق قائمة 3 شرطات
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+            searchBoxContainer.classList.remove('active');
+        });
+
+        // إظهار أو إخفاء حقل البحث بالـ ID عند الضغط على زر العدسة
+        searchIconBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchBoxContainer.classList.toggle('active');
+            dropdownMenu.classList.remove('show');
+        });
+
+        window.addEventListener('click', () => {
+            dropdownMenu.classList.remove('show');
+        });
+
+        // محاكاة البحث عن ID
+        searchIdBtn.addEventListener('click', () => {
+            const queryId = searchIdInput.value.trim();
+            if (queryId.length !== 7) {
+                searchResultMsg.textContent = "Please enter a valid 7-digit ID.";
+                return;
+            }
+            searchResultMsg.textContent = `Searching for ID: ${queryId}... (Not found in local demo)`;
+        });
+
+        myProfileOption.addEventListener('click', () => {
+            dropdownMenu.classList.remove('show');
+            if (currentUser) {
+                cardProfileName.textContent = currentUser.displayName || usernameInput.value.trim();
+                cardProfileAvatar.src = userAvatarSrc;
+                cardProfileId.textContent = `ID: ${generated7DigitID || '7849201'}`;
+                goToStep(document.getElementById('stepProfileView'));
+            }
+        });
+
+        backToMainBtn.addEventListener('click', () => {
+            goToStep(document.getElementById('stepMainApp'));
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                emailInput.value = '';
+                passwordInput.value = '';
+                goToStep(document.getElementById('stepAuth'));
+            } catch (error) {
+                console.error("Error signing out", error);
             }
         });
 
