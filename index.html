@@ -246,7 +246,6 @@
             gap: 8px;
         }
 
-        /* زر البحث الجديد (عدسة المكبرة) */
         .search-icon-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 215, 0, 0.4);
@@ -336,7 +335,6 @@
             background: rgba(255, 23, 68, 0.15);
         }
 
-        /* واجهة البحث بالـ ID */
         .search-box-container {
             display: none;
             background: rgba(255, 255, 255, 0.05);
@@ -377,7 +375,28 @@
             font-size: 12px;
         }
 
-        /* واجهة حسابي الشخصي */
+        /* نتيجة البحث عن المستخدم */
+        .search-result-card {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-result-card.show {
+            display: flex;
+        }
+        .search-result-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #ffd700;
+            object-fit: cover;
+        }
+
         .profile-card-details {
             display: flex;
             flex-direction: column;
@@ -477,7 +496,6 @@
     <div class="phone-container">
         <div class="login-card">
             
-            <!-- الخطوة 1: تسجيل الدخول / إنشاء حساب -->
             <div id="stepAuth" class="step active">
                 <h2>𝐋𝐨𝐠𝐢𝐧</h2>
                 <p>Welcome back</p>
@@ -500,7 +518,6 @@
                 </div>
             </div>
 
-            <!-- الخطوة 2: إدخال الاسم -->
             <div id="stepName" class="step">
                 <h2>Your Name</h2>
                 <p>What should we call you?</p>
@@ -515,7 +532,6 @@
                 </div>
             </div>
 
-            <!-- الخطوة 3: اختيار الصورة -->
             <div id="stepAvatar" class="step">
                 <h2>Profile Picture</h2>
                 <p>Choose an avatar for your profile</p>
@@ -533,19 +549,16 @@
                 </div>
             </div>
 
-            <!-- واجهة التطبيق الرئيسية (Mochat) -->
             <div id="stepMainApp" class="step">
                 <div class="main-app-container">
                     <div class="app-header">
                         <h1 class="app-title">Mochat</h1>
                         
                         <div class="header-actions">
-                            <!-- زر البحث بالـ ID -->
                             <button class="search-icon-btn" id="searchIconBtn" title="Search ID">
                                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             </button>
 
-                            <!-- زر 3 شرطات -->
                             <div style="position: relative;">
                                 <button class="menu-btn" id="menuBtn">
                                     <span></span>
@@ -560,13 +573,20 @@
                         </div>
                     </div>
 
-                    <!-- صندوق إدخال البحث بالـ ID -->
+                    <!-- صندوق البحث الفعلي المرتبط بقاعدة البيانات -->
                     <div class="search-box-container" id="searchBoxContainer">
                         <div class="search-input-row">
                             <input type="text" id="searchIdInput" placeholder="Enter 7-digit ID...">
                             <button class="search-action-btn" id="searchIdBtn">Search</button>
                         </div>
-                        <div id="searchResultMsg" style="font-size: 11px; margin-top: 6px; color: #ffd700; text-align: center;"></div>
+                        <div id="searchResultCard" class="search-result-card">
+                            <img id="resAvatar" class="search-result-avatar" src="" alt="">
+                            <div>
+                                <h4 id="resName" style="margin:0; font-size:13px; color:#fff;">Name</h4>
+                                <span id="resId" style="font-size:11px; color:#ffd700;">ID: --</span>
+                            </div>
+                        </div>
+                        <div id="searchResultMsg" style="font-size: 11px; margin-top: 6px; color: #ff8a80; text-align: center; display:none;"></div>
                     </div>
 
                     <div id="tabChats" class="tab-content active">
@@ -601,7 +621,6 @@
                 </div>
             </div>
 
-            <!-- واجهة حسابي الشخصي -->
             <div id="stepProfileView" class="step">
                 <h2>My Profile</h2>
                 <p>Your Account Details</p>
@@ -624,10 +643,12 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyARPqKI8r2GYPn1xKy3M7m7ZE3d5Wgq7uY",
             authDomain: "whatsapp-41877.firebaseapp.com",
+            databaseURL: "https://whatsapp-41877-default-rtdb.firebaseio.com",
             projectId: "whatsapp-41877",
             storageBucket: "whatsapp-41877.firebasestorage.app",
             messagingSenderId: "581714425078",
@@ -637,6 +658,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getDatabase(app);
 
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -660,7 +682,11 @@
         const searchBoxContainer = document.getElementById('searchBoxContainer');
         const searchIdInput = document.getElementById('searchIdInput');
         const searchIdBtn = document.getElementById('searchIdBtn');
+        const searchResultCard = document.getElementById('searchResultCard');
         const searchResultMsg = document.getElementById('searchResultMsg');
+        const resAvatar = document.getElementById('resAvatar');
+        const resName = document.getElementById('resName');
+        const resId = document.getElementById('resId');
 
         const cardProfileAvatar = document.getElementById('cardProfileAvatar');
         const cardProfileName = document.getElementById('cardProfileName');
@@ -681,9 +707,22 @@
             messageBox.style.display = 'none';
         }
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
+                // جلب بيانات المستخدم من قاعدة البيانات إذا كانت مخزنة
+                const dbRef = ref(db);
+                try {
+                    const snapshot = await get(child(dbRef, `users/${user.uid}`));
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        generated7DigitID = data.id;
+                        userAvatarSrc = data.avatar || userAvatarSrc;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
                 }
@@ -745,6 +784,7 @@
             }
         });
 
+        // حفظ بيانات الحساب بالكامل في قاعدة بيانات Firebase وتحديث الملف الشخصي
         finishBtn.addEventListener('click', async () => {
             if (!currentUser) return;
 
@@ -756,6 +796,17 @@
                     displayName: usernameInput.value.trim()
                 });
 
+                // تخزين معلومات المستخدم مع الـ ID في قاعدة البيانات Realtime Database
+                await set(ref(db, 'users/' + currentUser.uid), {
+                    name: usernameInput.value.trim(),
+                    id: generated7DigitID,
+                    avatar: userAvatarSrc,
+                    email: currentUser.email
+                });
+
+                // تخزين ربط بين الـ ID والـ UID لتسهيل البحث السريع
+                await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
+
                 goToStep(document.getElementById('stepMainApp'));
             } catch (error) {
                 showMessage("Failed to update profile.", "error");
@@ -765,14 +816,12 @@
             }
         });
 
-        // فتح وإغلاق قائمة 3 شرطات
         menuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdownMenu.classList.toggle('show');
             searchBoxContainer.classList.remove('active');
         });
 
-        // إظهار أو إخفاء حقل البحث بالـ ID عند الضغط على زر العدسة
         searchIconBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             searchBoxContainer.classList.toggle('active');
@@ -783,14 +832,43 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // محاكاة البحث عن ID
-        searchIdBtn.addEventListener('click', () => {
+        // البحث الفعلي عن المستخدم باستخدام Firebase Realtime Database
+        searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
+            searchResultCard.classList.remove('show');
+            searchResultMsg.style.display = 'none';
+
             if (queryId.length !== 7) {
                 searchResultMsg.textContent = "Please enter a valid 7-digit ID.";
+                searchResultMsg.style.display = 'block';
                 return;
             }
-            searchResultMsg.textContent = `Searching for ID: ${queryId}... (Not found in local demo)`;
+
+            try {
+                const dbRef = ref(db);
+                // البحث عبر خريطة الـ IDs
+                const idMapSnapshot = await get(child(dbRef, `idMapping/${queryId}`));
+                if (idMapSnapshot.exists()) {
+                    const targetUid = idMapSnapshot.val();
+                    const userSnapshot = await get(child(dbRef, `users/${targetUid}`));
+                    if (userSnapshot.exists()) {
+                        const userData = userSnapshot.val();
+                        resName.textContent = userData.name;
+                        resId.textContent = `ID: ${userData.id}`;
+                        resAvatar.src = userData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
+                        searchResultCard.classList.add('show');
+                    } else {
+                        searchResultMsg.textContent = "User not found.";
+                        searchResultMsg.style.display = 'block';
+                    }
+                } else {
+                    searchResultMsg.textContent = "No user matches this ID.";
+                    searchResultMsg.style.display = 'block';
+                }
+            } catch (error) {
+                searchResultMsg.textContent = "Search error occurred.";
+                searchResultMsg.style.display = 'block';
+            }
         });
 
         myProfileOption.addEventListener('click', () => {
@@ -798,7 +876,7 @@
             if (currentUser) {
                 cardProfileName.textContent = currentUser.displayName || usernameInput.value.trim();
                 cardProfileAvatar.src = userAvatarSrc;
-                cardProfileId.textContent = `ID: ${generated7DigitID || '7849201'}`;
+                cardProfileId.textContent = `ID: ${generated7DigitID || '------'}`;
                 goToStep(document.getElementById('stepProfileView'));
             }
         });
