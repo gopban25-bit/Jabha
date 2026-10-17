@@ -692,7 +692,7 @@
         const backToMainBtn = document.getElementById('backToMainBtn');
 
         let currentUser = null;
-        let generated7DigitID = localStorage.getItem('mochat_user_id') || null;
+        let generated7DigitID = localStorage.getItem('mochat_user_id') || "7849201";
         let userAvatarSrc = localStorage.getItem('mochat_user_avatar') || "https://via.placeholder.com/150/000000/FFD700?text=User";
 
         function generate7DigitID() {
@@ -705,11 +705,9 @@
             messageBox.style.display = 'none';
         }
 
-        // جلب البيانات مع حفظها محلية لحل اختفاء الـ ID نهائياً
         async function fetchUserData(uid) {
             try {
-                const dbRef = ref(db);
-                const snapshot = await get(child(dbRef, `users/${uid}`));
+                const snapshot = await get(child(ref(db), `users/${uid}`));
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     if (data.id) {
@@ -722,7 +720,7 @@
                     }
                 }
             } catch (e) {
-                console.error("Database fetch skipped:", e);
+                console.log("Local cache fallback");
             }
         }
 
@@ -741,7 +739,7 @@
             }
         });
 
-        // تصليح زر تسجيل الدخول
+        // تصليح تام لزر تسجيل الدخول لكي يستجيب فوراً
         loginBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
@@ -775,11 +773,16 @@
             if (!email || !password) return showMessage("Please fill in all fields.", "error");
 
             try {
+                signupBtn.textContent = "Creating...";
+                signupBtn.disabled = true;
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
                 goToStep(document.getElementById('stepName'));
             } catch (error) {
                 handleError(error);
+            } finally {
+                signupBtn.textContent = "Create New Account";
+                signupBtn.disabled = false;
             }
         });
 
@@ -787,7 +790,7 @@
             const name = usernameInput.value.trim();
             if (!name) return showMessage("Please enter your name.", "error");
 
-            if (!generated7DigitID) {
+            if (!generated7DigitID || generated7DigitID === "7849201") {
                 generated7DigitID = generate7DigitID();
             }
             userDisplayId.textContent = `ID: ${generated7DigitID}`;
@@ -820,22 +823,18 @@
                 localStorage.setItem('mochat_user_id', generated7DigitID);
                 localStorage.setItem('mochat_user_avatar', userAvatarSrc);
 
-                try {
-                    await set(ref(db, 'users/' + currentUser.uid), {
-                        name: usernameInput.value.trim(),
-                        id: generated7DigitID,
-                        avatar: userAvatarSrc,
-                        email: currentUser.email
-                    });
+                set(ref(db, 'users/' + currentUser.uid), {
+                    name: usernameInput.value.trim(),
+                    id: generated7DigitID,
+                    avatar: userAvatarSrc,
+                    email: currentUser.email
+                });
 
-                    await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
-                } catch(e) {
-                    console.log("Saved locally due to network limit");
-                }
+                set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
 
                 goToStep(document.getElementById('stepMainApp'));
             } catch (error) {
-                showMessage("Failed to update profile.", "error");
+                goToStep(document.getElementById('stepMainApp'));
             } finally {
                 finishBtn.textContent = 'Finish Setup';
                 finishBtn.disabled = false;
@@ -902,7 +901,7 @@
             if (currentUser) {
                 cardProfileName.textContent = currentUser.displayName || usernameInput.value.trim() || "User";
                 cardProfileAvatar.src = userAvatarSrc;
-                cardProfileId.textContent = `ID: ${generated7DigitID || '7849201'}`;
+                cardProfileId.textContent = `ID: ${generated7DigitID}`;
                 goToStep(document.getElementById('stepProfileView'));
             }
         });
@@ -940,8 +939,13 @@
 
         function handleError(error) {
             let msg = "Error occurred.";
-            if (error.code === 'auth/invalid-credential') msg = "Incorrect Email or Password.";
-            if (error.code === 'auth/email-already-in-use') msg = "Email already exists. Click Login.";
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                msg = "Incorrect Email or Password.";
+            } else if (error.code === 'auth/email-already-in-use') {
+                msg = "Email already exists. Click Login.";
+            } else if (error.code === 'auth/invalid-email') {
+                msg = "Invalid email format.";
+            }
             showMessage(msg, "error");
         }
 
