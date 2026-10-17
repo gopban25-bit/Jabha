@@ -389,8 +389,8 @@
             display: flex;
         }
         .search-result-avatar {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
             border: 1px solid #ffd700;
             object-fit: cover;
@@ -705,7 +705,7 @@
             messageBox.style.display = 'none';
         }
 
-        // جلب البيانات في الخلفية بدون ما تتبلوكا أزرار تسجيل الدخول
+        // دالة لجلب البيانات الخاصة بالمستخدم في الخلفية دون تعطيل تسجيل الدخول
         function fetchUserSpecificDataAsync(uid) {
             get(child(ref(db), `users/${uid}`)).then((snapshot) => {
                 if (snapshot.exists()) {
@@ -749,7 +749,6 @@
             }
         });
 
-        // تسجيل دخول سريع ونظيف بدون انتظار قاعدة البيانات
         loginBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
@@ -840,7 +839,7 @@
                     userSpecificID = generate7DigitID();
                 }
 
-                // حفظ نهائي للـ ID الخاص بهذا المستخدم حصرياً
+                // حفظ بيانات المستخدم في قاعدة البيانات وربط الـ ID بالـ UID
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: finalName,
                     id: userSpecificID,
@@ -875,6 +874,7 @@
             dropdownMenu.classList.remove('show');
         });
 
+        // ميزة البحث بالـ ID لجلب الاسم والصورة الحقيقيين
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
@@ -901,7 +901,7 @@
                         resAvatar.src = userData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
                         searchResultCard.classList.add('show');
                     } else {
-                        searchResultMsg.textContent = "User not found.";
+                        searchResultMsg.textContent = "User profile data not found.";
                         searchResultMsg.style.display = 'block';
                     }
                 } else {
