@@ -705,7 +705,7 @@
             messageBox.style.display = 'none';
         }
 
-        // مراقبة تسجيل الدخول وجلب البيانات تلقائياً من قاعدة البيانات لتفادي اختفاء الـ ID
+        // فحص حالة الجلسة دون إجبار المستخدم على إعادة التسجيل إذا كان مسجلاً مسبقاً
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -716,16 +716,23 @@
                         const data = snapshot.val();
                         generated7DigitID = data.id || "------";
                         userAvatarSrc = data.avatar || userAvatarSrc;
+                    } else {
+                        // إذا لم تكن البيانات مخزنة، ننشئ له ID افتراضي ونخزنه تلقائياً لكي لا يعلق
+                        generated7DigitID = generate7DigitID();
+                        userAvatarSrc = user.photoURL || userAvatarSrc;
+                        await set(ref(db, 'users/' + user.uid), {
+                            name: user.displayName || "User",
+                            id: generated7DigitID,
+                            avatar: userAvatarSrc,
+                            email: user.email
+                        });
+                        await set(ref(db, 'idMapping/' + generated7DigitID), user.uid);
                     }
                 } catch (e) {
                     console.error(e);
                 }
 
-                if (user.displayName) {
-                    goToStep(document.getElementById('stepMainApp'));
-                } else {
-                    goToStep(document.getElementById('stepName'));
-                }
+                goToStep(document.getElementById('stepMainApp'));
             } else {
                 goToStep(document.getElementById('stepAuth'));
             }
@@ -737,18 +744,12 @@
             if (!email || !password) return showMessage("Please fill in all fields.", "error");
 
             try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                currentUser = userCredential.user;
-                
-                // التحقق من وجود بيانات المستخدم فـ قاعدة البيانات
-                const snapshot = await get(child(ref(db), `users/${currentUser.uid}`));
-                if (snapshot.exists()) {
-                    goToStep(document.getElementById('stepMainApp'));
-                } else {
-                    goToStep(document.getElementById('stepName'));
-                }
+                setLoading(true, "Logging in...");
+                await signInWithEmailAndPassword(auth, email, password);
             } catch (error) {
                 handleError(error);
+            } finally {
+                setLoading(false, "Login");
             }
         });
 
@@ -758,11 +759,14 @@
             if (!email || !password) return showMessage("Please fill in all fields.", "error");
 
             try {
+                setLoading(true, "Creating...");
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
                 goToStep(document.getElementById('stepName'));
             } catch (error) {
                 handleError(error);
+            } finally {
+                setLoading(false, "Login");
             }
         });
 
@@ -908,11 +912,19 @@
             btnElement.classList.add('active');
         };
 
+        function setLoading(isLoading, text) {
+            loginBtn.textContent = text;
+            loginBtn.disabled = isLoading;
+        }
+
         function handleError(error) {
-            let msg = "Error occurred.";
-            if (error.code === 'auth/invalid-credential') msg = "Incorrect Email or Password.";
-            if (error.code === 'auth/email-already-in-use') msg = "Email already exists. Click Login.";
-            showMessage(msg, "error");
+            let msg = "Authentication failed.";
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                msg = "Incorrect Email or Password.";
+            } else if (error.code === 'auth/invalid-email') {
+                msg = "Invalid email format.";
+            }
+            showMessage(msg, 'error');
         }
 
         function showMessage(msg, type) {
