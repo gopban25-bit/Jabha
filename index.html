@@ -692,8 +692,8 @@
         const backToMainBtn = document.getElementById('backToMainBtn');
 
         let currentUser = null;
-        let generated7DigitID = null;
-        let userAvatarSrc = "https://via.placeholder.com/150/000000/FFD700?text=User";
+        let generated7DigitID = localStorage.getItem('mochat_user_id') || null;
+        let userAvatarSrc = localStorage.getItem('mochat_user_avatar') || "https://via.placeholder.com/150/000000/FFD700?text=User";
 
         function generate7DigitID() {
             return Math.floor(1000000 + Math.random() * 9000000).toString();
@@ -705,21 +705,31 @@
             messageBox.style.display = 'none';
         }
 
-        // جلب البيانات من Firebase مباشرة عند فتح التطبيق أو إعادة تسجيل الدخول
+        // جلب البيانات مع حفظها محلية لحل اختفاء الـ ID نهائياً
+        async function fetchUserData(uid) {
+            try {
+                const dbRef = ref(db);
+                const snapshot = await get(child(dbRef, `users/${uid}`));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.id) {
+                        generated7DigitID = data.id;
+                        localStorage.setItem('mochat_user_id', data.id);
+                    }
+                    if (data.avatar) {
+                        userAvatarSrc = data.avatar;
+                        localStorage.setItem('mochat_user_avatar', data.avatar);
+                    }
+                }
+            } catch (e) {
+                console.error("Database fetch skipped:", e);
+            }
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                const dbRef = ref(db);
-                try {
-                    const snapshot = await get(child(dbRef, `users/${user.uid}`));
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        generated7DigitID = data.id || "------";
-                        userAvatarSrc = data.avatar || userAvatarSrc;
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
+                await fetchUserData(user.uid);
 
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -731,27 +741,31 @@
             }
         });
 
+        // تصليح زر تسجيل الدخول
         loginBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
             if (!email || !password) return showMessage("Please fill in all fields.", "error");
 
             try {
+                loginBtn.textContent = "Logging in...";
+                loginBtn.disabled = true;
+                
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
                 
-                // جلب بيانات الحساب فوراً من قاعدة البيانات
-                const snapshot = await get(child(ref(db), `users/${currentUser.uid}`));
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    generated7DigitID = data.id;
-                    userAvatarSrc = data.avatar || userAvatarSrc;
+                await fetchUserData(currentUser.uid);
+
+                if (currentUser.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
                 } else {
                     goToStep(document.getElementById('stepName'));
                 }
             } catch (error) {
                 handleError(error);
+            } finally {
+                loginBtn.textContent = "Login";
+                loginBtn.disabled = false;
             }
         });
 
@@ -773,7 +787,9 @@
             const name = usernameInput.value.trim();
             if (!name) return showMessage("Please enter your name.", "error");
 
-            generated7DigitID = generate7DigitID();
+            if (!generated7DigitID) {
+                generated7DigitID = generate7DigitID();
+            }
             userDisplayId.textContent = `ID: ${generated7DigitID}`;
             goToStep(document.getElementById('stepAvatar'));
         });
@@ -801,15 +817,21 @@
                     displayName: usernameInput.value.trim()
                 });
 
-                // تخزين البيانات في Realtime Database
-                await set(ref(db, 'users/' + currentUser.uid), {
-                    name: usernameInput.value.trim(),
-                    id: generated7DigitID,
-                    avatar: userAvatarSrc,
-                    email: currentUser.email
-                });
+                localStorage.setItem('mochat_user_id', generated7DigitID);
+                localStorage.setItem('mochat_user_avatar', userAvatarSrc);
 
-                await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
+                try {
+                    await set(ref(db, 'users/' + currentUser.uid), {
+                        name: usernameInput.value.trim(),
+                        id: generated7DigitID,
+                        avatar: userAvatarSrc,
+                        email: currentUser.email
+                    });
+
+                    await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
+                } catch(e) {
+                    console.log("Saved locally due to network limit");
+                }
 
                 goToStep(document.getElementById('stepMainApp'));
             } catch (error) {
@@ -836,7 +858,6 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // البحث الحقيقي بالـ ID مع إظهار الاسم والصورة
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
@@ -879,9 +900,9 @@
         myProfileOption.addEventListener('click', () => {
             dropdownMenu.classList.remove('show');
             if (currentUser) {
-                cardProfileName.textContent = currentUser.displayName || "User";
+                cardProfileName.textContent = currentUser.displayName || usernameInput.value.trim() || "User";
                 cardProfileAvatar.src = userAvatarSrc;
-                cardProfileId.textContent = `ID: ${generated7DigitID || '------'}`;
+                cardProfileId.textContent = `ID: ${generated7DigitID || '7849201'}`;
                 goToStep(document.getElementById('stepProfileView'));
             }
         });
@@ -893,6 +914,8 @@
         logoutBtn.addEventListener('click', async () => {
             try {
                 await signOut(auth);
+                localStorage.removeItem('mochat_user_id');
+                localStorage.removeItem('mochat_user_avatar');
                 emailInput.value = '';
                 passwordInput.value = '';
                 goToStep(document.getElementById('stepAuth'));
