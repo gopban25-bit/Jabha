@@ -375,7 +375,6 @@
             font-size: 12px;
         }
 
-        /* نتيجة البحث عن المستخدم */
         .search-result-card {
             margin-top: 10px;
             background: rgba(0, 0, 0, 0.5);
@@ -573,7 +572,6 @@
                         </div>
                     </div>
 
-                    <!-- صندوق البحث الفعلي المرتبط بقاعدة البيانات -->
                     <div class="search-box-container" id="searchBoxContainer">
                         <div class="search-input-row">
                             <input type="text" id="searchIdInput" placeholder="Enter 7-digit ID...">
@@ -707,16 +705,16 @@
             messageBox.style.display = 'none';
         }
 
+        // مراقبة تسجيل الدخول وجلب البيانات تلقائياً من قاعدة البيانات لتفادي اختفاء الـ ID
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // جلب بيانات المستخدم من قاعدة البيانات إذا كانت مخزنة
                 const dbRef = ref(db);
                 try {
                     const snapshot = await get(child(dbRef, `users/${user.uid}`));
                     if (snapshot.exists()) {
                         const data = snapshot.val();
-                        generated7DigitID = data.id;
+                        generated7DigitID = data.id || "------";
                         userAvatarSrc = data.avatar || userAvatarSrc;
                     }
                 } catch (e) {
@@ -725,6 +723,8 @@
 
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
+                } else {
+                    goToStep(document.getElementById('stepName'));
                 }
             } else {
                 goToStep(document.getElementById('stepAuth'));
@@ -739,7 +739,10 @@
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
-                if (currentUser.displayName) {
+                
+                // التحقق من وجود بيانات المستخدم فـ قاعدة البيانات
+                const snapshot = await get(child(ref(db), `users/${currentUser.uid}`));
+                if (snapshot.exists()) {
                     goToStep(document.getElementById('stepMainApp'));
                 } else {
                     goToStep(document.getElementById('stepName'));
@@ -784,7 +787,6 @@
             }
         });
 
-        // حفظ بيانات الحساب بالكامل في قاعدة بيانات Firebase وتحديث الملف الشخصي
         finishBtn.addEventListener('click', async () => {
             if (!currentUser) return;
 
@@ -796,7 +798,6 @@
                     displayName: usernameInput.value.trim()
                 });
 
-                // تخزين معلومات المستخدم مع الـ ID في قاعدة البيانات Realtime Database
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: usernameInput.value.trim(),
                     id: generated7DigitID,
@@ -804,7 +805,6 @@
                     email: currentUser.email
                 });
 
-                // تخزين ربط بين الـ ID والـ UID لتسهيل البحث السريع
                 await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
 
                 goToStep(document.getElementById('stepMainApp'));
@@ -832,7 +832,6 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // البحث الفعلي عن المستخدم باستخدام Firebase Realtime Database
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
@@ -846,7 +845,6 @@
 
             try {
                 const dbRef = ref(db);
-                // البحث عبر خريطة الـ IDs
                 const idMapSnapshot = await get(child(dbRef, `idMapping/${queryId}`));
                 if (idMapSnapshot.exists()) {
                     const targetUid = idMapSnapshot.val();
@@ -874,7 +872,7 @@
         myProfileOption.addEventListener('click', () => {
             dropdownMenu.classList.remove('show');
             if (currentUser) {
-                cardProfileName.textContent = currentUser.displayName || usernameInput.value.trim();
+                cardProfileName.textContent = currentUser.displayName || "User";
                 cardProfileAvatar.src = userAvatarSrc;
                 cardProfileId.textContent = `ID: ${generated7DigitID || '------'}`;
                 goToStep(document.getElementById('stepProfileView'));
