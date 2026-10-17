@@ -705,27 +705,35 @@
             messageBox.style.display = 'none';
         }
 
-        // التحقق من قاعدة البيانات لجلب الـ ID الثابت الخاص بالمستخدم بدقة
+        // دالة جلب وتحديث الـ ID والصورة فوراً في واجهة المستخدم بمجرد توفر البيانات
         function fetchUserData(uid) {
             get(child(ref(db), `users/${uid}`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     if (data.id) {
-                        activeUserRealID = data.id; // تثبيت الـ ID القديم الخاص بهذا الحساب
+                        activeUserRealID = data.id;
+                        userDisplayId.textContent = `ID: ${activeUserRealID}`;
+                        cardProfileId.textContent = `ID: ${activeUserRealID}`;
                     }
                     if (data.avatar) {
                         activeUserAvatarSrc = data.avatar;
+                        avatarPreview.src = activeUserAvatarSrc;
+                        cardProfileAvatar.src = activeUserAvatarSrc;
                     }
-                    if (data.name && usernameInput) {
-                        usernameInput.value = data.name;
+                    if (data.name) {
+                        if (usernameInput) usernameInput.value = data.name;
+                        if (cardProfileName) cardProfileName.textContent = data.name;
                     }
                 } else {
-                    // إذا كان الحساب جديداً وليس لديه ID في القاعدة، ننشئ له ID جديد
                     activeUserRealID = generate7DigitID();
+                    userDisplayId.textContent = `ID: ${activeUserRealID}`;
+                    cardProfileId.textContent = `ID: ${activeUserRealID}`;
                 }
             }).catch(() => {
                 if (!activeUserRealID) {
                     activeUserRealID = generate7DigitID();
+                    userDisplayId.textContent = `ID: ${activeUserRealID}`;
+                    cardProfileId.textContent = `ID: ${activeUserRealID}`;
                 }
             });
         }
@@ -784,7 +792,9 @@
                 signupBtn.disabled = true;
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
-                activeUserRealID = generate7DigitID(); // توليد ID حصري للحساب الجديد
+                activeUserRealID = generate7DigitID();
+                userDisplayId.textContent = `ID: ${activeUserRealID}`;
+                cardProfileId.textContent = `ID: ${activeUserRealID}`;
                 goToStep(document.getElementById('stepName'));
             } catch (error) {
                 handleError(error);
@@ -802,6 +812,7 @@
                 activeUserRealID = generate7DigitID();
             }
             userDisplayId.textContent = `ID: ${activeUserRealID}`;
+            cardProfileId.textContent = `ID: ${activeUserRealID}`;
             goToStep(document.getElementById('stepAvatar'));
         });
 
@@ -812,6 +823,7 @@
                 reader.onload = function(e) {
                     activeUserAvatarSrc = e.target.result;
                     avatarPreview.src = activeUserAvatarSrc;
+                    cardProfileAvatar.src = activeUserAvatarSrc;
                 }
                 reader.readAsDataURL(file);
             }
@@ -834,7 +846,6 @@
                     activeUserRealID = generate7DigitID();
                 }
 
-                // حفظ البيانات وربط الـ ID الثابت بملف المستخدم
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: finalName,
                     id: activeUserRealID,
