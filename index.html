@@ -705,10 +705,9 @@
             messageBox.style.display = 'none';
         }
 
-        // جلب الـ ID الخاص بالمستخدم الحالي حصرياً من قاعدة بيانات Firebase اعتماداً على الـ UID دياله
-        async function fetchUserSpecificData(uid) {
-            try {
-                const snapshot = await get(child(ref(db), `users/${uid}`));
+        // جلب البيانات في الخلفية بدون ما تتبلوكا أزرار تسجيل الدخول
+        function fetchUserSpecificDataAsync(uid) {
+            get(child(ref(db), `users/${uid}`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     if (data.id) {
@@ -720,19 +719,21 @@
                     if (data.name && usernameInput) {
                         usernameInput.value = data.name;
                     }
+                } else {
+                    userSpecificID = generate7DigitID();
                 }
-            } catch (e) {
-                console.log("Error loading user profile");
-            }
+            }).catch(() => {
+                if (!userSpecificID) {
+                    userSpecificID = generate7DigitID();
+                }
+            });
         }
 
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                userSpecificID = null; // إعادة تعيين لتجنب تداخل الحسابات
-                await fetchUserSpecificData(user.uid);
+                fetchUserSpecificDataAsync(user.uid);
 
-                // إذا لم يكن لهذا المستخدم ID مسجل في القاعدة، نقوم بتوليد ID فريد جديد خاص به وحده
                 if (!userSpecificID) {
                     userSpecificID = generate7DigitID();
                 }
@@ -748,6 +749,7 @@
             }
         });
 
+        // تسجيل دخول سريع ونظيف بدون انتظار قاعدة البيانات
         loginBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
@@ -760,8 +762,7 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
 
-                userSpecificID = null;
-                await fetchUserSpecificData(currentUser.uid);
+                fetchUserSpecificDataAsync(currentUser.uid);
                 if (!userSpecificID) {
                     userSpecificID = generate7DigitID();
                 }
@@ -789,7 +790,7 @@
                 signupBtn.disabled = true;
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
-                userSpecificID = generate7DigitID(); // توليد ID فريد وجديد للحساب الجديد
+                userSpecificID = generate7DigitID();
                 goToStep(document.getElementById('stepName'));
             } catch (error) {
                 handleError(error);
@@ -835,7 +836,11 @@
                     displayName: finalName
                 });
 
-                // حفظ بيانات هذا المستخدم وربطه بالـ ID الفريد الخاص به في Firebase
+                if (!userSpecificID) {
+                    userSpecificID = generate7DigitID();
+                }
+
+                // حفظ نهائي للـ ID الخاص بهذا المستخدم حصرياً
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: finalName,
                     id: userSpecificID,
