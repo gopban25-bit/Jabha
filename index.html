@@ -375,7 +375,6 @@
             font-size: 12px;
         }
 
-        /* كارت نتيجة البحث بطريقة جذابة */
         .search-result-card {
             margin-top: 10px;
             background: rgba(0, 0, 0, 0.5);
@@ -496,7 +495,6 @@
     <div class="phone-container">
         <div class="login-card">
             
-            <!-- الخطوة 1: تسجيل الدخول / إنشاء حساب -->
             <div id="stepAuth" class="step active">
                 <h2>𝐋𝐨𝐠𝐢𝐧</h2>
                 <p>Welcome back</p>
@@ -519,7 +517,6 @@
                 </div>
             </div>
 
-            <!-- الخطوة 2: إدخال الاسم -->
             <div id="stepName" class="step">
                 <h2>Your Name</h2>
                 <p>What should we call you?</p>
@@ -534,7 +531,6 @@
                 </div>
             </div>
 
-            <!-- الخطوة 3: اختيار الصورة -->
             <div id="stepAvatar" class="step">
                 <h2>Profile Picture</h2>
                 <p>Choose an avatar for your profile</p>
@@ -552,7 +548,6 @@
                 </div>
             </div>
 
-            <!-- واجهة التطبيق الرئيسية (Mochat) -->
             <div id="stepMainApp" class="step">
                 <div class="main-app-container">
                     <div class="app-header">
@@ -577,7 +572,6 @@
                         </div>
                     </div>
 
-                    <!-- صندوق البحث مع عرض نتيجة البحث المرتبطة بـ Firebase Database -->
                     <div class="search-box-container" id="searchBoxContainer">
                         <div class="search-input-row">
                             <input type="text" id="searchIdInput" placeholder="Enter 7-digit ID...">
@@ -625,7 +619,6 @@
                 </div>
             </div>
 
-            <!-- واجهة حسابي الشخصي -->
             <div id="stepProfileView" class="step">
                 <h2>My Profile</h2>
                 <p>Your Account Details</p>
@@ -645,7 +638,6 @@
         </div>
     </div>
 
-    <!-- ربط حزم Firebase Auth + Realtime Database -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -713,6 +705,7 @@
             messageBox.style.display = 'none';
         }
 
+        // جلب البيانات من Firebase مباشرة عند فتح التطبيق أو إعادة تسجيل الدخول
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -746,7 +739,13 @@
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
-                if (currentUser.displayName) {
+                
+                // جلب بيانات الحساب فوراً من قاعدة البيانات
+                const snapshot = await get(child(ref(db), `users/${currentUser.uid}`));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    generated7DigitID = data.id;
+                    userAvatarSrc = data.avatar || userAvatarSrc;
                     goToStep(document.getElementById('stepMainApp'));
                 } else {
                     goToStep(document.getElementById('stepName'));
@@ -791,7 +790,6 @@
             }
         });
 
-        // حفظ بيانات المستخدم في Realtime Database لتسهيل البحث بالـ ID
         finishBtn.addEventListener('click', async () => {
             if (!currentUser) return;
 
@@ -803,7 +801,7 @@
                     displayName: usernameInput.value.trim()
                 });
 
-                // حفظ العقدة الرئيسية للمستخدم
+                // تخزين البيانات في Realtime Database
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: usernameInput.value.trim(),
                     id: generated7DigitID,
@@ -811,7 +809,6 @@
                     email: currentUser.email
                 });
 
-                // حفظ عقدة الربط السريعة idMapping
                 await set(ref(db, 'idMapping/' + generated7DigitID), currentUser.uid);
 
                 goToStep(document.getElementById('stepMainApp'));
@@ -839,7 +836,7 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // دالة البحث الحقيقي المربوطة بـ Firebase Realtime Database
+        // البحث الحقيقي بالـ ID مع إظهار الاسم والصورة
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
@@ -853,7 +850,6 @@
 
             try {
                 const dbRef = ref(db);
-                // استعلام خريطة الأرقام التعريفية idMapping
                 const idMapSnapshot = await get(child(dbRef, `idMapping/${queryId}`));
                 
                 if (idMapSnapshot.exists()) {
@@ -867,15 +863,15 @@
                         resAvatar.src = userData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
                         searchResultCard.classList.add('show');
                     } else {
-                        searchResultMsg.textContent = "User account not found.";
+                        searchResultMsg.textContent = "User not found.";
                         searchResultMsg.style.display = 'block';
                     }
                 } else {
-                    searchResultMsg.textContent = "No user found with this ID.";
+                    searchResultMsg.textContent = "No user matches this ID.";
                     searchResultMsg.style.display = 'block';
                 }
             } catch (error) {
-                searchResultMsg.textContent = "Error searching database.";
+                searchResultMsg.textContent = "Search error occurred.";
                 searchResultMsg.style.display = 'block';
             }
         });
@@ -883,7 +879,7 @@
         myProfileOption.addEventListener('click', () => {
             dropdownMenu.classList.remove('show');
             if (currentUser) {
-                cardProfileName.textContent = currentUser.displayName || usernameInput.value.trim();
+                cardProfileName.textContent = currentUser.displayName || "User";
                 cardProfileAvatar.src = userAvatarSrc;
                 cardProfileId.textContent = `ID: ${generated7DigitID || '------'}`;
                 goToStep(document.getElementById('stepProfileView'));
