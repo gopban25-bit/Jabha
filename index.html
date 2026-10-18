@@ -673,7 +673,7 @@
             margin-top: 4px;
         }
 
-        /* نافذة الاتصال الوارد / الصادر */
+        /* نافذة الاتصال (المكالمات الواردة/الصادرة) */
         .call-modal-overlay {
             position: absolute;
             inset: 0;
@@ -946,7 +946,7 @@
                         </div>
                     </div>
 
-                    <!-- غرفة المحادثة مع زر الاتصال -->
+                    <!-- غرفة المحادثة مع زر الاتصال الفعلي -->
                     <div id="tabChatRoom" class="tab-content">
                         <div class="chat-room-container">
                             <div class="chat-room-header">
@@ -1014,14 +1014,16 @@
                 </div>
             </div>
 
-            <!-- نافذة الاتصال (المكالمات الواردة/الصادرة) -->
+            <!-- نافذة الاتصال (المكالمات الصوتية المباشرة عبر الميكروفون) -->
             <div id="callModalOverlay" class="call-modal-overlay">
                 <img id="callModalAvatar" class="call-avatar" src="" alt="">
                 <h3 id="callModalName" style="margin: 0 0 5px 0; color: #fff; font-size: 20px;">اسم الشخص</h3>
                 <p id="callModalStatus" class="call-status-text">جاري الاتصال...</p>
                 
+                <!-- عنصر تشغيل الصوت المباشر أثناء المكالمة -->
+                <audio id="remoteAudioStream" autoplay style="display:none;"></audio>
+
                 <div class="call-actions" id="callActionsContainer">
-                    <!-- أزرار القبول والرفض تظهر حسب حالة الاتصال -->
                     <button id="acceptCallBtn" class="call-action-btn accept" style="display:none;" title="قبول">
                         <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
                     </button>
@@ -1117,6 +1119,7 @@
         const callModalStatus = document.getElementById('callModalStatus');
         const acceptCallBtn = document.getElementById('acceptCallBtn');
         const rejectCallBtn = document.getElementById('rejectCallBtn');
+        const remoteAudioStream = document.getElementById('remoteAudioStream');
 
         const deleteModalOverlay = document.getElementById('deleteModalOverlay');
         const deleteForMeBtn = document.getElementById('deleteForMeBtn');
@@ -1129,6 +1132,8 @@
         let activeChatTargetUid = null;
         let activeChatRoomId = null;
         let activeCallId = null;
+        let localAudioStream = null;
+        let callAudioRecorder = null;
 
         let mediaRecorder = null;
         let audioChunks = [];
@@ -1442,48 +1447,49 @@
             loadChatMessages(activeChatRoomId);
         }
 
-        // تفعيل بدء المكالمة الحقيقية عبر Firebase
+        // بدء المكالمة الحية عبر الميكروفون
         callUserBtn.addEventListener('click', async () => {
             if (!activeChatTargetUid || !currentUser) return;
 
             activeCallId = [currentUser.uid, activeChatTargetUid].sort().join('_');
 
             try {
-                // إنشاء سجل مكالمة في قاعدة البيانات
+                // فتح الميكروفون الخاص بالمكالمة
+                localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
                 await set(ref(db, `calls/${activeCallId}`), {
                     caller: currentUser.uid,
                     receiver: activeChatTargetUid,
-                    status: "ringing", // ringing, accepted, rejected
+                    status: "ringing",
                     timestamp: Date.now()
                 });
 
-                // إظهار واجهة الاتصال الصادر عندك
                 callModalAvatar.src = roomUserAvatar.src;
                 callModalName.textContent = roomUserName.textContent;
-                callModalStatus.textContent = "جاري الاتصال...";
+                callModalStatus.textContent = "جاري الاتصال... 📞";
                 acceptCallBtn.style.display = 'none';
                 callModalOverlay.classList.add('show');
 
-                // مراقبة حالة المكالمة (هل قبلها الطرف الآخر أو رفضها)
+                // تتبع حالة الاتصال
                 onValue(ref(db, `calls/${activeCallId}`), (snapshot) => {
                     if (snapshot.exists()) {
                         const callData = snapshot.val();
                         if (callData.status === "accepted") {
-                            callModalStatus.textContent = "المكالمة جارية 🟢";
+                            callModalStatus.textContent = "المكالمة جارية 🟢 (يتحدث الآن)";
+                            startLiveAudioStream(activeCallId);
                         } else if (callData.status === "rejected" || callData.status === "ended") {
-                            closeCallModal();
+                            terminateCallSession();
                         }
                     } else {
-                        closeCallModal();
+                        terminateCallSession();
                     }
-                }, { onlyOnce: false });
+                });
 
-            } catch (e) {
-                console.error("Error starting call", e);
+            } catch (err) {
+                alert("لم يتم السماح باستخدام الميكروفون للمكالمة.");
             }
         });
 
-        // مراقبة الاتصالات الواردة للمستخدم الحالي
         function listenForIncomingCalls(uid) {
             const callsRef = ref(db, 'calls');
             onValue(callsRef, async (snapshot) => {
@@ -1495,7 +1501,6 @@
                     if (callData.receiver === uid && callData.status === "ringing") {
                         activeCallId = callId;
 
-                        // جلب بيانات الشخص اللي كيعيط
                         const userSnap = await get(ref(db, `users/${callData.caller}`));
                         const callerData = userSnap.exists() ? userSnap.val() : { name: "مستخدم", avatar: "" };
 
@@ -1510,25 +1515,73 @@
             });
         }
 
-        // قبول المكالمة
         acceptCallBtn.addEventListener('click', async () => {
             if (activeCallId) {
-                await update(ref(db, `calls/${activeCallId}`), { status: "accepted" });
-                callModalStatus.textContent = "المكالمة جارية 🟢";
-                acceptCallBtn.style.display = 'none';
+                try {
+                    localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    await update(ref(db, `calls/${activeCallId}`), { status: "accepted" });
+                    callModalStatus.textContent = "المكالمة جارية 🟢 (يتحدث الآن)";
+                    acceptCallBtn.style.display = 'none';
+                    startLiveAudioStream(activeCallId);
+                } catch (e) {
+                    alert("يجب السماح بالميكروفون لإجراء المكالمة.");
+                }
             }
         });
 
-        // رفض أو إنهاء المكالمة
+        // نقل تدفق الصوت الفعلي عبر قاعدة البيانات للأطراف
+        function startLiveAudioStream(callId) {
+            if (!localAudioStream) return;
+
+            callAudioRecorder = new MediaRecorder(localAudioStream, { mimeType: 'audio/webm' });
+
+            callAudioRecorder.ondataavailable = async (e) => {
+                if (e.data.size > 0 && activeCallId) {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(e.data);
+                    reader.onloadend = async () => {
+                        await set(ref(db, `calls/${callId}/audioStream/${currentUser.uid}`), {
+                            chunk: reader.result,
+                            time: Date.now()
+                        });
+                    };
+                }
+            };
+
+            callAudioRecorder.start(800); // إرسال أجزاء صوتية كل 0.8 ثانية لتسمعوا بعضكم مباشرة
+
+            // استقبال الصوت من الطرف الآخر
+            onValue(ref(db, `calls/${callId}/audioStream`), (snapshot) => {
+                if (!snapshot.exists()) return;
+                const streams = snapshot.val();
+                for (let uid in streams) {
+                    if (uid !== currentUser.uid) {
+                        const audioData = streams[uid];
+                        if (audioData && audioData.chunk) {
+                            remoteAudioStream.src = audioData.chunk;
+                            remoteAudioStream.play().catch(err => {});
+                        }
+                    }
+                }
+            });
+        }
+
         rejectCallBtn.addEventListener('click', async () => {
             if (activeCallId) {
                 await update(ref(db, `calls/${activeCallId}`), { status: "rejected" });
                 await remove(ref(db, `calls/${activeCallId}`));
             }
-            closeCallModal();
+            terminateCallSession();
         });
 
-        function closeCallModal() {
+        function terminateCallSession() {
+            if (callAudioRecorder && callAudioRecorder.state !== "inactive") {
+                callAudioRecorder.stop();
+            }
+            if (localAudioStream) {
+                localAudioStream.getTracks().forEach(track => track.stop());
+                localAudioStream = null;
+            }
             callModalOverlay.classList.remove('show');
             acceptCallBtn.style.display = 'none';
             activeCallId = null;
