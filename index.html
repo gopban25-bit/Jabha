@@ -424,6 +424,7 @@
             margin-bottom: 8px;
             cursor: pointer;
             transition: background 0.2s;
+            position: relative;
         }
         .chat-item:hover {
             background: rgba(255, 215, 0, 0.1);
@@ -452,6 +453,22 @@
             overflow: hidden;
             text-overflow: ellipsis;
             margin: 0;
+        }
+
+        /* شارة عدد الرسائل غير المقروءة */
+        .unread-badge {
+            background: linear-gradient(135deg, #ffd700 0%, #ff1744 100%);
+            color: #000;
+            font-weight: bold;
+            font-size: 11px;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
         }
 
         .profile-card-details {
@@ -841,7 +858,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, set, get, child, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, get, child, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyARPqKI8r2GYPn1xKy3M7m7ZE3d5Wgq7uY",
@@ -1219,8 +1236,10 @@
         backToChatsBtn.addEventListener('click', () => {
             document.getElementById('tabChatRoom').classList.remove('active');
             document.getElementById('tabChats').classList.add('active');
+            activeChatRoomId = null;
         });
 
+        // إرسال رسالة نصية
         sendMsgBtn.addEventListener('click', async () => {
             const text = chatMessageInput.value.trim();
             if (!text || !activeChatRoomId || !currentUser) return;
@@ -1231,6 +1250,7 @@
                     sender: currentUser.uid,
                     text: text,
                     type: "text",
+                    read: false,
                     timestamp: Date.now()
                 });
                 chatMessageInput.value = '';
@@ -1262,6 +1282,7 @@
                                     sender: currentUser.uid,
                                     audioUrl: base64Audio,
                                     type: "audio",
+                                    read: false,
                                     timestamp: Date.now()
                                 });
                             }
@@ -1302,7 +1323,14 @@
                 chatMessagesList.innerHTML = '';
                 if (snapshot.exists()) {
                     snapshot.forEach((childSnap) => {
+                        const msgKey = childSnap.key;
                         const msg = childSnap.val();
+
+                        // تحديث حالة القراءة للرسائل المستقبلة
+                        if (msg.sender !== currentUser.uid && !msg.read) {
+                            update(ref(db, `chats/${roomId}/messages/${msgKey}`), { read: true });
+                        }
+
                         const div = document.createElement('div');
                         div.className = `message-bubble ${msg.sender === currentUser.uid ? 'sent' : 'received'}`;
                         
@@ -1322,7 +1350,7 @@
             });
         }
 
-        // إزالة التكرار نهائياً وتجميع المحادثات حسب الشخص
+        // جلب المحادثات، ترتيبها حسب الأحدث، وحساب الرسائل غير المقروءة
         function loadRecentChats() {
             if (!currentUser) return;
 
@@ -1336,7 +1364,7 @@
                 }
 
                 const allChats = snapshot.val();
-                const uniquePartners = {};
+                const uniquePartners = [];
 
                 for (let roomId in allChats) {
                     if (roomId.includes(currentUser.uid)) {
@@ -1345,35 +1373,48 @@
                         
                         let lastMsgText = "No messages yet";
                         let lastTimestamp = 0;
+                        let unreadCount = 0;
 
                         if (allChats[roomId].messages) {
-                            const msgKeys = Object.keys(allChats[roomId].messages);
+                            const messagesObj = allChats[roomId].messages;
+                            const msgKeys = Object.keys(messagesObj);
                             const lastKey = msgKeys[msgKeys.length - 1];
-                            const lastObj = allChats[roomId].messages[lastKey];
+                            const lastObj = messagesObj[lastKey];
+
                             lastMsgText = lastObj.type === "audio" ? "🎵 Voice Note" : lastObj.text;
                             lastTimestamp = lastObj.timestamp || 0;
+
+                            // حساب الرسائل التي أرسلها الشريك ولم تقرأ بعد
+                            msgKeys.forEach(k => {
+                                const m = messagesObj[k];
+                                if (m.sender === partnerUid && m.read === false) {
+                                    unreadCount++;
+                                }
+                            });
                         }
 
-                        uniquePartners[partnerUid] = {
+                        uniquePartners.push({
                             partnerUid,
                             lastMsgText,
-                            lastTimestamp
-                        };
+                            lastTimestamp,
+                            unreadCount
+                        });
                     }
                 }
 
-                const partnerKeys = Object.keys(uniquePartners);
-                if (partnerKeys.length === 0) {
+                if (uniquePartners.length === 0) {
                     chatsListContainer.innerHTML = '<div class="tab-pane-placeholder">No active messages yet. Start chatting!</div>';
                     return;
                 }
 
-                for (let partnerUid of partnerKeys) {
-                    const itemData = uniquePartners[partnerUid];
+                // ترتيب المحادثات من الأحدث إلى الأقدم
+                uniquePartners.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+
+                for (let itemData of uniquePartners) {
                     let partnerData = { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
                     
                     try {
-                        const userSnap = await get(child(ref(db), `users/${partnerUid}`));
+                        const userSnap = await get(child(ref(db), `users/${itemData.partnerUid}`));
                         if (userSnap.exists()) {
                             partnerData = userSnap.val();
                         }
@@ -1381,16 +1422,20 @@
 
                     const chatItem = document.createElement('div');
                     chatItem.className = 'chat-item';
+                    
+                    const badgeHtml = itemData.unreadCount > 0 ? `<div class="unread-badge">${itemData.unreadCount}</div>` : '';
+
                     chatItem.innerHTML = `
                         <img src="${partnerData.avatar || 'https://via.placeholder.com/150/000000/FFD700?text=User'}" class="chat-item-avatar" alt="">
                         <div class="chat-item-details">
                             <p class="chat-item-name">${partnerData.name || 'Unknown User'}</p>
                             <p class="chat-item-lastmsg">${itemData.lastMsgText}</p>
                         </div>
+                        ${badgeHtml}
                     `;
 
                     chatItem.addEventListener('click', () => {
-                        openChatRoom(partnerUid, partnerData.name, partnerData.avatar);
+                        openChatRoom(itemData.partnerUid, partnerData.name, partnerData.avatar);
                     });
 
                     chatsListContainer.appendChild(chatItem);
