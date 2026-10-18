@@ -413,7 +413,7 @@
             width: 100%;
         }
 
-        /* تعديلات إطار المحادثة (نقصنا الـ padding ليكون أنحف غير عريض) مع ضبط اسم الشخص ونزوله للوسط تماماً */
+        /* تعديلات إطار المحادثة (أنحف) مع تمركز اسم الشخص تماماً في الوسط عمودياً مع الصورة */
         .chat-item {
             display: flex;
             align-items: center;
@@ -445,14 +445,15 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-self: center; /* تـوسـيـط العناصر عمودياً داخل الإطار */
             overflow: hidden;
-            gap: 2px;
+            gap: 3px;
         }
         .chat-item-name {
             font-size: 14px;
             font-weight: bold;
             color: #ffffff;
-            margin: 6px 0 0 0;
+            margin: 0; /* إزالة أي هوامش عشوائية لكي لا يصعد للأعلى */
         }
         .chat-item-lastmsg {
             font-size: 12px;
