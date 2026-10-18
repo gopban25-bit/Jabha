@@ -413,7 +413,6 @@
             width: 100%;
         }
 
-        /* تعديل تصميم الإطار وحجم الحسابات في قسم المحادثات */
         .chat-item {
             display: flex;
             align-items: center;
@@ -642,7 +641,6 @@
             margin-top: 4px;
         }
 
-        /* نافذة خيارات الحذف */
         .delete-modal-overlay {
             position: absolute;
             inset: 0;
@@ -1458,7 +1456,14 @@
                         const startPress = () => {
                             pressTimer = setTimeout(() => {
                                 selectedMessageKey = msgKey;
-                                deleteForEveryoneBtn.style.display = 'block';
+
+                                // تحكم في إظهار زر "حذف لدى الجميع" فقط للرسائل التي أرسلتها أنت (مثل واتساب)
+                                if (msg.sender === currentUser.uid) {
+                                    deleteForEveryoneBtn.style.display = 'block';
+                                } else {
+                                    deleteForEveryoneBtn.style.display = 'none';
+                                }
+
                                 deleteModalOverlay.classList.add('show');
                             }, 600);
                         };
