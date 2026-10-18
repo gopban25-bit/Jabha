@@ -1347,21 +1347,23 @@
             });
         }
 
-        // تحسين دالة جلب المحادثات لمنع التكرار نهائياً وتجمعيها بـ Object موحد
+        // دالة حاسمة لمنع التكرار ومنع السباق الإزاحي (Race Condition)
         function loadRecentChats() {
             if (!currentUser) return;
 
             const chatsRef = ref(db, 'chats');
             onValue(chatsRef, async (snapshot) => {
-                chatsListContainer.innerHTML = '';
-                
                 if (!snapshot.exists()) {
                     chatsListContainer.innerHTML = '<div class="tab-pane-placeholder">No active messages yet. Start chatting!</div>';
                     return;
                 }
 
+                // جلب بيانات جميع المستخدمين دفعة واحدة لمنع استدعاءات async المكررة
+                const usersSnap = await get(child(ref(db), 'users'));
+                const allUsers = usersSnap.exists() ? usersSnap.val() : {};
+
                 const allChats = snapshot.val();
-                const uniqueMap = {}; // مفتاح الخريطة هو partnerUid لضمان عدم التكرار المزدوج
+                const uniqueMap = {};
 
                 for (let roomId in allChats) {
                     if (roomId.includes(currentUser.uid)) {
@@ -1389,7 +1391,6 @@
                             });
                         }
 
-                        // الاحتفاظ بآخر تحديث للمحادثة لنفس الشخص فقط
                         if (!uniqueMap[partnerUid] || uniqueMap[partnerUid].lastTimestamp < lastTimestamp) {
                             uniqueMap[partnerUid] = {
                                 partnerUid,
@@ -1408,18 +1409,13 @@
                     return;
                 }
 
-                // ترتيب الحسابات من الأحدث للأقدم
                 sortedPartners.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
+                // بناء العناصر دفعة واحدة وإضافتها مرة واحدة للـ DOM
+                const fragment = document.createDocumentFragment();
+
                 for (let itemData of sortedPartners) {
-                    let partnerData = { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
-                    
-                    try {
-                        const userSnap = await get(child(ref(db), `users/${itemData.partnerUid}`));
-                        if (userSnap.exists()) {
-                            partnerData = userSnap.val();
-                        }
-                    } catch(e) {}
+                    const partnerData = allUsers[itemData.partnerUid] || { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
 
                     const chatItem = document.createElement('div');
                     chatItem.className = 'chat-item';
@@ -1439,8 +1435,11 @@
                         openChatRoom(itemData.partnerUid, partnerData.name, partnerData.avatar);
                     });
 
-                    chatsListContainer.appendChild(chatItem);
+                    fragment.appendChild(chatItem);
                 }
+
+                chatsListContainer.innerHTML = '';
+                chatsListContainer.appendChild(fragment);
             });
         }
 
