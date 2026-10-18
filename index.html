@@ -413,6 +413,48 @@
             width: 100%;
         }
 
+        /* تنسيق عناصر قائمة المحادثات النشطة */
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chat-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        .chat-item-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid #ffd700;
+            object-fit: cover;
+        }
+        .chat-item-details {
+            flex: 1;
+            overflow: hidden;
+        }
+        .chat-item-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 0 0 3px 0;
+        }
+        .chat-item-lastmsg {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+
         .profile-card-details {
             display: flex;
             flex-direction: column;
@@ -458,7 +500,7 @@
             font-size: 14px;
         }
 
-        /* تنسيق صفحة المحادثة الفردية */
+        /* صفحة المحادثة الفردية */
         .chat-room-container {
             display: flex;
             flex-direction: column;
@@ -476,7 +518,7 @@
             background: none;
             border: none;
             color: #ffd700;
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
             font-weight: bold;
         }
@@ -680,7 +722,6 @@
                         <div id="searchResultMsg" style="font-size: 11px; margin-top: 6px; color: #ff8a80; text-align: center; display:none;"></div>
                     </div>
 
-                    <!-- تبويب المحادثات -->
                     <div id="tabChats" class="tab-content active">
                         <h4 style="margin:0 0 10px 0; font-size:15px; color:#ffd700;">Chats</h4>
                         <div id="chatsListContainer">
@@ -688,7 +729,6 @@
                         </div>
                     </div>
 
-                    <!-- صفحة المحادثة الفردية -->
                     <div id="tabChatRoom" class="tab-content">
                         <div class="chat-room-container">
                             <div class="chat-room-header">
@@ -799,6 +839,8 @@
         const resId = document.getElementById('resId');
         const chatWithUserBtn = document.getElementById('chatWithUserBtn');
 
+        const chatsListContainer = document.getElementById('chatsListContainer');
+
         const cardProfileAvatar = document.getElementById('cardProfileAvatar');
         const cardProfileName = document.getElementById('cardProfileName');
         const cardProfileId = document.getElementById('cardProfileId');
@@ -902,6 +944,7 @@
                 updateUIWithUserData();
 
                 fetchOrCreateUserPersistentData(user.uid);
+                loadRecentChats();
 
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -928,6 +971,7 @@
                 currentUser = userCredential.user;
 
                 await fetchOrCreateUserPersistentData(currentUser.uid);
+                loadRecentChats();
 
                 if (currentUser.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -1017,6 +1061,7 @@
 
                 await set(ref(db, 'idMapping/' + persistentUserID), currentUser.uid);
 
+                loadRecentChats();
                 goToStep(document.getElementById('stepMainApp'));
             } catch (error) {
                 goToStep(document.getElementById('stepMainApp'));
@@ -1096,30 +1141,30 @@
             }
         });
 
-        // زر الانتقال للمحادثة مع المستخدم المعني
         chatWithUserBtn.addEventListener('click', () => {
             if (!foundTargetUserData || !currentUser) return;
-            activeChatTargetUid = foundTargetUserData.uid;
-            
-            // غرفة محادثة موحدة وثابتة بين الحسابين
+            openChatRoom(foundTargetUserData.uid, foundTargetUserData.name, foundTargetUserData.avatar);
+        });
+
+        function openChatRoom(targetUid, targetName, targetAvatar) {
+            activeChatTargetUid = targetUid;
             activeChatRoomId = [currentUser.uid, activeChatTargetUid].sort().join('_');
 
-            roomUserName.textContent = foundTargetUserData.name;
-            roomUserAvatar.src = foundTargetUserData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
+            roomUserName.textContent = targetName || "User";
+            roomUserAvatar.src = targetAvatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
 
             searchBoxContainer.classList.remove('active');
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById('tabChatRoom').classList.add('active');
 
             loadChatMessages(activeChatRoomId);
-        });
+        }
 
         backToChatsBtn.addEventListener('click', () => {
             document.getElementById('tabChatRoom').classList.remove('active');
             document.getElementById('tabChats').classList.add('active');
         });
 
-        // إرسال رسالة وحفظها مباشرة في قاعدة البيانات
         sendMsgBtn.addEventListener('click', async () => {
             const text = chatMessageInput.value.trim();
             if (!text || !activeChatRoomId || !currentUser) return;
@@ -1137,7 +1182,6 @@
             }
         });
 
-        // جلب وقراءة الرسائل بشكل حي (Real-time) من Firebase
         function loadChatMessages(roomId) {
             chatMessagesList.innerHTML = '';
             const msgRef = ref(db, `chats/${roomId}/messages`);
@@ -1152,6 +1196,61 @@
                         chatMessagesList.appendChild(div);
                     });
                     chatMessagesList.scrollTop = chatMessagesList.scrollHeight;
+                }
+            });
+        }
+
+        // دالة جلب وإظهار المحادثات النشطة في قائمة Chats الرئيسية تلقائياً
+        function loadRecentChats() {
+            if (!currentUser) return;
+
+            const chatsRef = ref(db, 'chats');
+            onValue(chatsRef, async (snapshot) => {
+                chatsListContainer.innerHTML = '';
+                let hasChats = false;
+
+                if (snapshot.exists()) {
+                    const allChats = snapshot.val();
+                    for (let roomId in allChats) {
+                        if (roomId.includes(currentUser.uid)) {
+                            hasChats = true;
+                            const uids = roomId.split('_');
+                            const partnerUid = uids[0] === currentUser.uid ? uids[1] : uids[0];
+
+                            let partnerData = { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
+                            const userSnap = await get(child(ref(db), `users/${partnerUid}`));
+                            if (userSnap.exists()) {
+                                partnerData = userSnap.val();
+                            }
+
+                            let lastMsgText = "No messages yet";
+                            if (allChats[roomId].messages) {
+                                const msgKeys = Object.keys(allChats[roomId].messages);
+                                const lastKey = msgKeys[msgKeys.length - 1];
+                                lastMsgText = allChats[roomId].messages[lastKey].text;
+                            }
+
+                            const chatItem = document.createElement('div');
+                            chatItem.className = 'chat-item';
+                            chatItem.innerHTML = `
+                                <img src="${partnerData.avatar || 'https://via.placeholder.com/150/000000/FFD700?text=User'}" class="chat-item-avatar" alt="">
+                                <div class="chat-item-details">
+                                    <p class="chat-item-name">${partnerData.name || 'Unknown User'}</p>
+                                    <p class="chat-item-lastmsg">${lastMsgText}</p>
+                                </div>
+                            `;
+
+                            chatItem.addEventListener('click', () => {
+                                openChatRoom(partnerUid, partnerData.name, partnerData.avatar);
+                            });
+
+                            chatsListContainer.appendChild(chatItem);
+                        }
+                    }
+                }
+
+                if (!hasChats) {
+                    chatsListContainer.innerHTML = '<div class="tab-pane-placeholder">No active messages yet. Start chatting!</div>';
                 }
             });
         }
