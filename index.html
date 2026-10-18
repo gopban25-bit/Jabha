@@ -377,7 +377,7 @@
 
         .search-result-card {
             margin-top: 10px;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             border: 1px solid #ffd700;
             border-radius: 10px;
             padding: 10px;
@@ -743,6 +743,8 @@
                     if (data.name && usernameInput) {
                         usernameInput.value = data.name;
                     }
+                    // التأكد من تسجيل idMapping بشكل دائم في كل دخول
+                    await set(ref(db, `idMapping/${persistentUserID}`), uid);
                 } else {
                     if (!persistentUserID) {
                         persistentUserID = generate7DigitID();
@@ -919,7 +921,7 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // دالة بحث ذكية ومحسنة للبحث عبر idMapping أو مباشرة عبر فحص جميع المستخدمين في users
+        // دالة بحث شاملة ومضبوطة لضمان جلب أي حساب عبر الـ ID
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
@@ -935,12 +937,12 @@
                 const dbRef = ref(db);
                 let targetUid = null;
 
-                // 1. محاولة البحث عبر الـ idMapping أولاً
+                // 1. البحث عبر idMapping
                 const idMapSnapshot = await get(child(dbRef, `idMapping/${queryId}`));
                 if (idMapSnapshot.exists()) {
                     targetUid = idMapSnapshot.val();
                 } else {
-                    // 2. إذا لم يوجد في idMapping، نبحث مباشرة داخل قائمة المستخدمين (users) لضمان إيجاده
+                    // 2. فحص شامل لجميع المستخدمين في users اذا لم يوجد في idMapping
                     const usersSnapshot = await get(child(dbRef, 'users'));
                     if (usersSnapshot.exists()) {
                         usersSnapshot.forEach((childSnapshot) => {
@@ -969,7 +971,7 @@
                     searchResultMsg.style.display = 'block';
                 }
             } catch (error) {
-                searchResultMsg.textContent = "Search error occurred.";
+                searchResultMsg.textContent = "Search error occurred (Check Firebase Rules).";
                 searchResultMsg.style.display = 'block';
             }
         });
