@@ -639,7 +639,7 @@
             margin-top: 4px;
         }
 
-        /* نافذة اختيار نوع الحذف */
+        /* نافذة خيارات الحذف */
         .delete-modal-overlay {
             position: absolute;
             inset: 0;
@@ -915,7 +915,7 @@
                 </div>
             </div>
 
-            <!-- نافذة الخيارات: حذف لدي فقط / حذف لدى الجميع -->
+            <!-- نافذة الخيارات -->
             <div id="deleteModalOverlay" class="delete-modal-overlay">
                 <div class="delete-modal-card">
                     <h3>حذف الرسالة</h3>
@@ -1436,9 +1436,7 @@
                         const msgKey = childSnap.key;
                         const msg = childSnap.val();
 
-                        // إذا كانت الرسالة محمية بالحذف لدي فقط للـ currentUser نتجاهل عرضها
                         if (msg.deletedFor && msg.deletedFor[currentUser.uid]) return;
-
                         if (msg.timestamp && msg.timestamp < thirtyDaysAgo) return;
 
                         const div = document.createElement('div');
@@ -1457,14 +1455,8 @@
                         const startPress = () => {
                             pressTimer = setTimeout(() => {
                                 selectedMessageKey = msgKey;
-
-                                // إظهار أو إخفاء زر "حذف لدى الجميع" حسب صاحب الرسالة
-                                if (msg.sender === currentUser.uid) {
-                                    deleteForEveryoneBtn.style.display = 'block';
-                                } else {
-                                    deleteForEveryoneBtn.style.display = 'none';
-                                }
-
+                                // إظهار الزرين بجوج دائماً
+                                deleteForEveryoneBtn.style.display = 'block';
                                 deleteModalOverlay.classList.add('show');
                             }, 600);
                         };
@@ -1488,13 +1480,12 @@
             });
         }
 
-        // إلغاء النافذة
         cancelDeleteBtn.addEventListener('click', () => {
             deleteModalOverlay.classList.remove('show');
             selectedMessageKey = null;
         });
 
-        // خيار (1): حذف لدي فقط
+        // خيار: حذف لدي فقط
         deleteForMeBtn.addEventListener('click', async () => {
             if (selectedMessageKey && activeChatRoomId && currentUser) {
                 try {
@@ -1507,7 +1498,7 @@
             selectedMessageKey = null;
         });
 
-        // خيار (2): حذف لدى الجميع
+        // خيار: حذف لدى الجميع
         deleteForEveryoneBtn.addEventListener('click', async () => {
             if (selectedMessageKey && activeChatRoomId) {
                 try {
