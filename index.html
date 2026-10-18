@@ -455,7 +455,6 @@
             margin: 0;
         }
 
-        /* شارة عدد الرسائل غير المقروءة */
         .unread-badge {
             background: linear-gradient(135deg, #ffd700 0%, #ff1744 100%);
             color: #000;
@@ -1239,7 +1238,6 @@
             activeChatRoomId = null;
         });
 
-        // إرسال رسالة نصية
         sendMsgBtn.addEventListener('click', async () => {
             const text = chatMessageInput.value.trim();
             if (!text || !activeChatRoomId || !currentUser) return;
@@ -1326,7 +1324,6 @@
                         const msgKey = childSnap.key;
                         const msg = childSnap.val();
 
-                        // تحديث حالة القراءة للرسائل المستقبلة
                         if (msg.sender !== currentUser.uid && !msg.read) {
                             update(ref(db, `chats/${roomId}/messages/${msgKey}`), { read: true });
                         }
@@ -1350,7 +1347,7 @@
             });
         }
 
-        // جلب المحادثات، ترتيبها حسب الأحدث، وحساب الرسائل غير المقروءة
+        // تحسين دالة جلب المحادثات لمنع التكرار نهائياً وتجمعيها بـ Object موحد
         function loadRecentChats() {
             if (!currentUser) return;
 
@@ -1364,7 +1361,7 @@
                 }
 
                 const allChats = snapshot.val();
-                const uniquePartners = [];
+                const uniqueMap = {}; // مفتاح الخريطة هو partnerUid لضمان عدم التكرار المزدوج
 
                 for (let roomId in allChats) {
                     if (roomId.includes(currentUser.uid)) {
@@ -1384,7 +1381,6 @@
                             lastMsgText = lastObj.type === "audio" ? "🎵 Voice Note" : lastObj.text;
                             lastTimestamp = lastObj.timestamp || 0;
 
-                            // حساب الرسائل التي أرسلها الشريك ولم تقرأ بعد
                             msgKeys.forEach(k => {
                                 const m = messagesObj[k];
                                 if (m.sender === partnerUid && m.read === false) {
@@ -1393,24 +1389,29 @@
                             });
                         }
 
-                        uniquePartners.push({
-                            partnerUid,
-                            lastMsgText,
-                            lastTimestamp,
-                            unreadCount
-                        });
+                        // الاحتفاظ بآخر تحديث للمحادثة لنفس الشخص فقط
+                        if (!uniqueMap[partnerUid] || uniqueMap[partnerUid].lastTimestamp < lastTimestamp) {
+                            uniqueMap[partnerUid] = {
+                                partnerUid,
+                                lastMsgText,
+                                lastTimestamp,
+                                unreadCount
+                            };
+                        }
                     }
                 }
 
-                if (uniquePartners.length === 0) {
+                const sortedPartners = Object.values(uniqueMap);
+
+                if (sortedPartners.length === 0) {
                     chatsListContainer.innerHTML = '<div class="tab-pane-placeholder">No active messages yet. Start chatting!</div>';
                     return;
                 }
 
-                // ترتيب المحادثات من الأحدث إلى الأقدم
-                uniquePartners.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+                // ترتيب الحسابات من الأحدث للأقدم
+                sortedPartners.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
-                for (let itemData of uniquePartners) {
+                for (let itemData of sortedPartners) {
                     let partnerData = { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
                     
                     try {
