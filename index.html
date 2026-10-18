@@ -673,7 +673,6 @@
             margin-top: 4px;
         }
 
-        /* نافذة الاتصال (المكالمات الواردة/الصادرة) */
         .call-modal-overlay {
             position: absolute;
             inset: 0;
@@ -946,7 +945,6 @@
                         </div>
                     </div>
 
-                    <!-- غرفة المحادثة مع زر الاتصال الفعلي -->
                     <div id="tabChatRoom" class="tab-content">
                         <div class="chat-room-container">
                             <div class="chat-room-header">
@@ -1014,14 +1012,10 @@
                 </div>
             </div>
 
-            <!-- نافذة الاتصال (المكالمات الصوتية المباشرة عبر الميكروفون) -->
             <div id="callModalOverlay" class="call-modal-overlay">
                 <img id="callModalAvatar" class="call-avatar" src="" alt="">
                 <h3 id="callModalName" style="margin: 0 0 5px 0; color: #fff; font-size: 20px;">اسم الشخص</h3>
                 <p id="callModalStatus" class="call-status-text">جاري الاتصال...</p>
-                
-                <!-- عنصر تشغيل الصوت المباشر أثناء المكالمة -->
-                <audio id="remoteAudioStream" autoplay style="display:none;"></audio>
 
                 <div class="call-actions" id="callActionsContainer">
                     <button id="acceptCallBtn" class="call-action-btn accept" style="display:none;" title="قبول">
@@ -1033,7 +1027,6 @@
                 </div>
             </div>
 
-            <!-- نافذة الخيارات للرسائل -->
             <div id="deleteModalOverlay" class="delete-modal-overlay">
                 <div class="delete-modal-card">
                     <h3>حذف الرسالة</h3>
@@ -1046,6 +1039,9 @@
             <div id="messageBox" class="message-box"></div>
         </div>
     </div>
+
+    <!-- استيراد مكتبة Agora Web SDK -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -1066,6 +1062,9 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+
+        // تم ربط App ID الخاص بك بـ Agora بنجاح
+        const AGORA_APP_ID = "d42a3fbfb6464ef5b343207912381d58";
 
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -1119,7 +1118,6 @@
         const callModalStatus = document.getElementById('callModalStatus');
         const acceptCallBtn = document.getElementById('acceptCallBtn');
         const rejectCallBtn = document.getElementById('rejectCallBtn');
-        const remoteAudioStream = document.getElementById('remoteAudioStream');
 
         const deleteModalOverlay = document.getElementById('deleteModalOverlay');
         const deleteForMeBtn = document.getElementById('deleteForMeBtn');
@@ -1132,8 +1130,10 @@
         let activeChatTargetUid = null;
         let activeChatRoomId = null;
         let activeCallId = null;
-        let localAudioStream = null;
-        let callAudioRecorder = null;
+
+        // متغيرات الاتصال الصوتي الحقيقي عبر Agora
+        let agoraClient = null;
+        let localAudioTrack = null;
 
         let mediaRecorder = null;
         let audioChunks = [];
@@ -1447,16 +1447,13 @@
             loadChatMessages(activeChatRoomId);
         }
 
-        // بدء المكالمة الحية عبر الميكروفون
+        // بدء المكالمة الحية عبر Agora.io
         callUserBtn.addEventListener('click', async () => {
             if (!activeChatTargetUid || !currentUser) return;
 
             activeCallId = [currentUser.uid, activeChatTargetUid].sort().join('_');
 
             try {
-                // فتح الميكروفون الخاص بالمكالمة
-                localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
                 await set(ref(db, `calls/${activeCallId}`), {
                     caller: currentUser.uid,
                     receiver: activeChatTargetUid,
@@ -1470,13 +1467,12 @@
                 acceptCallBtn.style.display = 'none';
                 callModalOverlay.classList.add('show');
 
-                // تتبع حالة الاتصال
-                onValue(ref(db, `calls/${activeCallId}`), (snapshot) => {
+                onValue(ref(db, `calls/${activeCallId}`), async (snapshot) => {
                     if (snapshot.exists()) {
                         const callData = snapshot.val();
                         if (callData.status === "accepted") {
-                            callModalStatus.textContent = "المكالمة جارية 🟢 (يتحدث الآن)";
-                            startLiveAudioStream(activeCallId);
+                            callModalStatus.textContent = "المكالمة جارية 🟢";
+                            await joinAgoraChannel(activeCallId);
                         } else if (callData.status === "rejected" || callData.status === "ended") {
                             terminateCallSession();
                         }
@@ -1485,8 +1481,8 @@
                     }
                 });
 
-            } catch (err) {
-                alert("لم يتم السماح باستخدام الميكروفون للمكالمة.");
+            } catch (e) {
+                console.error("Error starting call", e);
             }
         });
 
@@ -1518,52 +1514,37 @@
         acceptCallBtn.addEventListener('click', async () => {
             if (activeCallId) {
                 try {
-                    localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     await update(ref(db, `calls/${activeCallId}`), { status: "accepted" });
-                    callModalStatus.textContent = "المكالمة جارية 🟢 (يتحدث الآن)";
+                    callModalStatus.textContent = "المكالمة جارية 🟢";
                     acceptCallBtn.style.display = 'none';
-                    startLiveAudioStream(activeCallId);
+                    await joinAgoraChannel(activeCallId);
                 } catch (e) {
                     alert("يجب السماح بالميكروفون لإجراء المكالمة.");
                 }
             }
         });
 
-        // نقل تدفق الصوت الفعلي عبر قاعدة البيانات للأطراف
-        function startLiveAudioStream(callId) {
-            if (!localAudioStream) return;
+        // الانضمام لقناة الصوت في Agora
+        async function joinAgoraChannel(channelName) {
+            if (!agoraClient) {
+                agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+            }
 
-            callAudioRecorder = new MediaRecorder(localAudioStream, { mimeType: 'audio/webm' });
+            try {
+                await agoraClient.join(AGORA_APP_ID, channelName, null, null);
+                
+                localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                await agoraClient.publish([localAudioTrack]);
 
-            callAudioRecorder.ondataavailable = async (e) => {
-                if (e.data.size > 0 && activeCallId) {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(e.data);
-                    reader.onloadend = async () => {
-                        await set(ref(db, `calls/${callId}/audioStream/${currentUser.uid}`), {
-                            chunk: reader.result,
-                            time: Date.now()
-                        });
-                    };
-                }
-            };
-
-            callAudioRecorder.start(800); // إرسال أجزاء صوتية كل 0.8 ثانية لتسمعوا بعضكم مباشرة
-
-            // استقبال الصوت من الطرف الآخر
-            onValue(ref(db, `calls/${callId}/audioStream`), (snapshot) => {
-                if (!snapshot.exists()) return;
-                const streams = snapshot.val();
-                for (let uid in streams) {
-                    if (uid !== currentUser.uid) {
-                        const audioData = streams[uid];
-                        if (audioData && audioData.chunk) {
-                            remoteAudioStream.src = audioData.chunk;
-                            remoteAudioStream.play().catch(err => {});
-                        }
+                agoraClient.on("user-published", async (user, mediaType) => {
+                    await agoraClient.subscribe(user, mediaType);
+                    if (mediaType === "audio") {
+                        user.audioTrack.play();
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error("Agora join error:", error);
+            }
         }
 
         rejectCallBtn.addEventListener('click', async () => {
@@ -1574,13 +1555,14 @@
             terminateCallSession();
         });
 
-        function terminateCallSession() {
-            if (callAudioRecorder && callAudioRecorder.state !== "inactive") {
-                callAudioRecorder.stop();
+        async function terminateCallSession() {
+            if (localAudioTrack) {
+                localAudioTrack.stop();
+                localAudioTrack.close();
+                localAudioTrack = null;
             }
-            if (localAudioStream) {
-                localAudioStream.getTracks().forEach(track => track.stop());
-                localAudioStream = null;
+            if (agoraClient) {
+                await agoraClient.leave();
             }
             callModalOverlay.classList.remove('show');
             acceptCallBtn.style.display = 'none';
