@@ -1229,7 +1229,32 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById('tabChatRoom').classList.add('active');
 
+            // فاش كيدخل المستخدم للشات، هنا كدوز الرسائل كاملة لـ read: true
+            markMessagesAsRead(activeChatRoomId);
+
             loadChatMessages(activeChatRoomId);
+        }
+
+        // دالة خاصة لتعليم رسائل الشات بأنها مقروءة عند الدخول إليها
+        async function markMessagesAsRead(roomId) {
+            try {
+                const msgSnapshot = await get(ref(db, `chats/${roomId}/messages`));
+                if (msgSnapshot.exists()) {
+                    const updates = {};
+                    msgSnapshot.forEach((childSnap) => {
+                        const msgKey = childSnap.key;
+                        const msg = childSnap.val();
+                        if (msg.sender !== currentUser.uid && !msg.read) {
+                            updates[`${msgKey}/read`] = true;
+                        }
+                    });
+                    if (Object.keys(updates).length > 0) {
+                        await update(ref(db, `chats/${roomId}/messages`), updates);
+                    }
+                }
+            } catch (e) {
+                console.error("Error marking messages as read", e);
+            }
         }
 
         backToChatsBtn.addEventListener('click', () => {
@@ -1321,12 +1346,7 @@
                 chatMessagesList.innerHTML = '';
                 if (snapshot.exists()) {
                     snapshot.forEach((childSnap) => {
-                        const msgKey = childSnap.key;
                         const msg = childSnap.val();
-
-                        if (msg.sender !== currentUser.uid && !msg.read) {
-                            update(ref(db, `chats/${roomId}/messages/${msgKey}`), { read: true });
-                        }
 
                         const div = document.createElement('div');
                         div.className = `message-bubble ${msg.sender === currentUser.uid ? 'sent' : 'received'}`;
@@ -1347,7 +1367,6 @@
             });
         }
 
-        // دالة حاسمة لمنع التكرار ومنع السباق الإزاحي (Race Condition)
         function loadRecentChats() {
             if (!currentUser) return;
 
@@ -1358,7 +1377,6 @@
                     return;
                 }
 
-                // جلب بيانات جميع المستخدمين دفعة واحدة لمنع استدعاءات async المكررة
                 const usersSnap = await get(child(ref(db), 'users'));
                 const allUsers = usersSnap.exists() ? usersSnap.val() : {};
 
@@ -1411,7 +1429,6 @@
 
                 sortedPartners.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
-                // بناء العناصر دفعة واحدة وإضافتها مرة واحدة للـ DOM
                 const fragment = document.createDocumentFragment();
 
                 for (let itemData of sortedPartners) {
