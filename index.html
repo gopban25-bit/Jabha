@@ -688,7 +688,7 @@
                         </div>
                     </div>
 
-                    <!-- صفحة المحادثة الفردية (مخفية حتى يتم الضغط على زر رسالة) -->
+                    <!-- صفحة المحادثة الفردية -->
                     <div id="tabChatRoom" class="tab-content">
                         <div class="chat-room-container">
                             <div class="chat-room-header">
@@ -1096,18 +1096,17 @@
             }
         });
 
-        // الضغط على زر رسالة لفتح صفحة الدردشة الفردية
+        // زر الانتقال للمحادثة مع المستخدم المعني
         chatWithUserBtn.addEventListener('click', () => {
             if (!foundTargetUserData || !currentUser) return;
             activeChatTargetUid = foundTargetUserData.uid;
             
-            // إنشاء معرّف فريد وثابت لغرفة الدردشة بين المستخدمين بغض النظر عن من بدأها
+            // غرفة محادثة موحدة وثابتة بين الحسابين
             activeChatRoomId = [currentUser.uid, activeChatTargetUid].sort().join('_');
 
             roomUserName.textContent = foundTargetUserData.name;
             roomUserAvatar.src = foundTargetUserData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
 
-            // إخفاء بحث والانتقال لصفحة المحادثة
             searchBoxContainer.classList.remove('active');
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById('tabChatRoom').classList.add('active');
@@ -1120,7 +1119,7 @@
             document.getElementById('tabChats').classList.add('active');
         });
 
-        // إرسال رسالة
+        // إرسال رسالة وحفظها مباشرة في قاعدة البيانات
         sendMsgBtn.addEventListener('click', async () => {
             const text = chatMessageInput.value.trim();
             if (!text || !activeChatRoomId || !currentUser) return;
@@ -1138,6 +1137,7 @@
             }
         });
 
+        // جلب وقراءة الرسائل بشكل حي (Real-time) من Firebase
         function loadChatMessages(roomId) {
             chatMessagesList.innerHTML = '';
             const msgRef = ref(db, `chats/${roomId}/messages`);
