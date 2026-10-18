@@ -377,13 +377,13 @@
 
         .search-result-card {
             margin-top: 10px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid #ffd700;
             border-radius: 10px;
             padding: 10px;
             display: none;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         .search-result-card.show {
             display: flex;
@@ -392,7 +392,7 @@
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            border: 1px solid #ffd700;
+            border: 2px solid #ffd700;
             object-fit: cover;
         }
 
@@ -580,8 +580,8 @@
                         <div id="searchResultCard" class="search-result-card">
                             <img id="resAvatar" class="search-result-avatar" src="" alt="">
                             <div>
-                                <h4 id="resName" style="margin:0; font-size:13px; color:#fff;">Name</h4>
-                                <span id="resId" style="font-size:11px; color:#ffd700;">ID: --</span>
+                                <h4 id="resName" style="margin:0; font-size:14px; color:#fff; font-weight:bold;">Name</h4>
+                                <span id="resId" style="font-size:12px; color:#ffd700;">ID: --</span>
                             </div>
                         </div>
                         <div id="searchResultMsg" style="font-size: 11px; margin-top: 6px; color: #ff8a80; text-align: center; display:none;"></div>
@@ -721,16 +721,11 @@
         }
 
         async function fetchOrCreateUserPersistentData(uid) {
-            // أولاً نجرب LocalStorage باش يبان الـ ID فوراً بدون انتظار الإنترنت
             let localId = localStorage.getItem(`mochat_id_${uid}`);
             let localAvatar = localStorage.getItem(`mochat_avatar_${uid}`);
 
-            if (localId) {
-                persistentUserID = localId;
-            }
-            if (localAvatar) {
-                persistentUserAvatar = localAvatar;
-            }
+            if (localId) persistentUserID = localId;
+            if (localAvatar) persistentUserAvatar = localAvatar;
             updateUIWithUserData();
 
             try {
@@ -754,7 +749,6 @@
                     }
                     localStorage.setItem(`mochat_id_${uid}`, persistentUserID);
                     
-                    // حفظه فوراً في القاعدة باش ما يضيعش
                     await set(ref(db, `users/${uid}`), {
                         name: currentUser.displayName || "User",
                         id: persistentUserID,
@@ -776,8 +770,6 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                
-                // تعيين ID مؤقت فوري من LocalStorage أو توليده باش ما يبقاش ------ حتى يوصل السيرفر
                 let quickId = localStorage.getItem(`mochat_id_${user.uid}`);
                 if (!quickId) {
                     quickId = generate7DigitID();
@@ -927,19 +919,21 @@
             dropdownMenu.classList.remove('show');
         });
 
+        // دالة البحث بالـ ID المصلحة بالكامل لضمان جلب الحساب مباشرة
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
             searchResultMsg.style.display = 'none';
 
-            if (queryId.length !== 7) {
-                searchResultMsg.textContent = "Please enter a valid 7-digit ID.";
+            if (!queryId) {
+                searchResultMsg.textContent = "Please enter an ID.";
                 searchResultMsg.style.display = 'block';
                 return;
             }
 
             try {
                 const dbRef = ref(db);
+                // البحث مباشرة عن الـ UID المرتبط بالـ ID المدخل
                 const idMapSnapshot = await get(child(dbRef, `idMapping/${queryId}`));
                 
                 if (idMapSnapshot.exists()) {
@@ -948,8 +942,8 @@
                     
                     if (userSnapshot.exists()) {
                         const userData = userSnapshot.val();
-                        resName.textContent = userData.name;
-                        resId.textContent = `ID: ${userData.id}`;
+                        resName.textContent = userData.name || "Unknown User";
+                        resId.textContent = `ID: ${userData.id || queryId}`;
                         resAvatar.src = userData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
                         searchResultCard.classList.add('show');
                     } else {
