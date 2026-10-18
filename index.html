@@ -413,27 +413,30 @@
             width: 100%;
         }
 
+        /* تعديل تصميم الإطار وحجم الحسابات في قسم المحادثات */
         .chat-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 14px;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1.5px solid #ffd700;
+            border-radius: 12px;
             margin-bottom: 8px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
             position: relative;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
         }
         .chat-item:hover {
             background: rgba(255, 215, 0, 0.1);
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
         }
         .chat-item-avatar {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border: 2px solid #ffd700;
+            border: 1.5px solid #ffd700;
             object-fit: cover;
         }
         .chat-item-details {
@@ -441,14 +444,14 @@
             overflow: hidden;
         }
         .chat-item-name {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #ffffff;
-            margin: 0 0 3px 0;
+            margin: 0 0 2px 0;
         }
         .chat-item-lastmsg {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -639,7 +642,7 @@
             margin-top: 4px;
         }
 
-        /* نافذة اختيار نوع الحذف */
+        /* نافذة خيارات الحذف */
         .delete-modal-overlay {
             position: absolute;
             inset: 0;
@@ -1436,9 +1439,7 @@
                         const msgKey = childSnap.key;
                         const msg = childSnap.val();
 
-                        // إذا كانت الرسالة محمية بالحذف لدي فقط للـ currentUser نتجاهل عرضها
                         if (msg.deletedFor && msg.deletedFor[currentUser.uid]) return;
-
                         if (msg.timestamp && msg.timestamp < thirtyDaysAgo) return;
 
                         const div = document.createElement('div');
@@ -1457,14 +1458,7 @@
                         const startPress = () => {
                             pressTimer = setTimeout(() => {
                                 selectedMessageKey = msgKey;
-
-                                // إظهار أو إخفاء زر "حذف لدى الجميع" حسب صاحب الرسالة
-                                if (msg.sender === currentUser.uid) {
-                                    deleteForEveryoneBtn.style.display = 'block';
-                                } else {
-                                    deleteForEveryoneBtn.style.display = 'none';
-                                }
-
+                                deleteForEveryoneBtn.style.display = 'block';
                                 deleteModalOverlay.classList.add('show');
                             }, 600);
                         };
@@ -1488,13 +1482,11 @@
             });
         }
 
-        // إلغاء النافذة
         cancelDeleteBtn.addEventListener('click', () => {
             deleteModalOverlay.classList.remove('show');
             selectedMessageKey = null;
         });
 
-        // خيار (1): حذف لدي فقط
         deleteForMeBtn.addEventListener('click', async () => {
             if (selectedMessageKey && activeChatRoomId && currentUser) {
                 try {
@@ -1507,7 +1499,6 @@
             selectedMessageKey = null;
         });
 
-        // خيار (2): حذف لدى الجميع
         deleteForEveryoneBtn.addEventListener('click', async () => {
             if (selectedMessageKey && activeChatRoomId) {
                 try {
