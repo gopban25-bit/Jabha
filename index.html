@@ -204,12 +204,12 @@
             border: 1px solid #ffd700;
             color: #ffd700;
             font-weight: bold;
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 12px;
             text-align: center;
             margin-bottom: 10px;
             letter-spacing: 2px;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .main-app-container {
@@ -401,14 +401,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px 10px;
+            padding: 15px 10px;
             text-align: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .profile-card-avatar {
-            width: 110px;
-            height: 110px;
+            width: 95px;
+            height: 95px;
             border-radius: 50%;
             border: 3px solid #ffd700;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
@@ -417,10 +417,10 @@
         }
 
         .profile-card-name {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             color: #ffffff;
-            margin: 5px 0 0 0;
+            margin: 2px 0 0 0;
             text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
         }
 
@@ -705,8 +705,34 @@
             messageBox.style.display = 'none';
         }
 
-        // جلب الـ ID بضمان عدم ضياعه عبر الاعتماد على الـ Database وملف التخزين المحلي معاً
+        function updateUIWithUserData() {
+            if (persistentUserID) {
+                userDisplayId.textContent = `ID: ${persistentUserID}`;
+                cardProfileId.textContent = `ID: ${persistentUserID}`;
+            }
+            if (persistentUserAvatar) {
+                avatarPreview.src = persistentUserAvatar;
+                cardProfileAvatar.src = persistentUserAvatar;
+            }
+            if (currentUser && currentUser.displayName) {
+                cardProfileName.textContent = currentUser.displayName;
+                if (usernameInput) usernameInput.value = currentUser.displayName;
+            }
+        }
+
         async function fetchOrCreateUserPersistentData(uid) {
+            // أولاً نجرب LocalStorage باش يبان الـ ID فوراً بدون انتظار الإنترنت
+            let localId = localStorage.getItem(`mochat_id_${uid}`);
+            let localAvatar = localStorage.getItem(`mochat_avatar_${uid}`);
+
+            if (localId) {
+                persistentUserID = localId;
+            }
+            if (localAvatar) {
+                persistentUserAvatar = localAvatar;
+            }
+            updateUIWithUserData();
+
             try {
                 const snapshot = await get(child(ref(db), `users/${uid}`));
                 if (snapshot.exists()) {
@@ -719,42 +745,47 @@
                         persistentUserAvatar = data.avatar;
                         localStorage.setItem(`mochat_avatar_${uid}`, data.avatar);
                     }
-                    if (data.name) {
-                        if (usernameInput) usernameInput.value = data.name;
-                        if (cardProfileName) cardProfileName.textContent = data.name;
+                    if (data.name && usernameInput) {
+                        usernameInput.value = data.name;
                     }
                 } else {
-                    // إذا لم يوجد في السيرفر، نبحث في التخزين المحلي للمتصفح
-                    const localId = localStorage.getItem(`mochat_id_${uid}`);
-                    if (localId) {
-                        persistentUserID = localId;
-                    } else {
+                    if (!persistentUserID) {
                         persistentUserID = generate7DigitID();
-                        localStorage.setItem(`mochat_id_${uid}`, persistentUserID);
                     }
+                    localStorage.setItem(`mochat_id_${uid}`, persistentUserID);
+                    
+                    // حفظه فوراً في القاعدة باش ما يضيعش
+                    await set(ref(db, `users/${uid}`), {
+                        name: currentUser.displayName || "User",
+                        id: persistentUserID,
+                        avatar: persistentUserAvatar,
+                        email: currentUser.email
+                    });
+                    await set(ref(db, `idMapping/${persistentUserID}`), uid);
                 }
-
-                // تحديث الواجهة فوراً بالرقم والصورة
-                if (persistentUserID) {
-                    userDisplayId.textContent = `ID: ${persistentUserID}`;
-                    cardProfileId.textContent = `ID: ${persistentUserID}`;
-                }
-                if (persistentUserAvatar) {
-                    avatarPreview.src = persistentUserAvatar;
-                    cardProfileAvatar.src = persistentUserAvatar;
-                }
+                updateUIWithUserData();
             } catch (e) {
                 if (!persistentUserID) {
-                    persistentUserID = localStorage.getItem(`mochat_id_${uid}`) || generate7DigitID();
+                    persistentUserID = generate7DigitID();
+                    localStorage.setItem(`mochat_id_${uid}`, persistentUserID);
                 }
-                userDisplayId.textContent = `ID: ${persistentUserID}`;
-                cardProfileId.textContent = `ID: ${persistentUserID}`;
+                updateUIWithUserData();
             }
         }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
+                
+                // تعيين ID مؤقت فوري من LocalStorage أو توليده باش ما يبقاش ------ حتى يوصل السيرفر
+                let quickId = localStorage.getItem(`mochat_id_${user.uid}`);
+                if (!quickId) {
+                    quickId = generate7DigitID();
+                    localStorage.setItem(`mochat_id_${user.uid}`, quickId);
+                }
+                persistentUserID = quickId;
+                updateUIWithUserData();
+
                 fetchOrCreateUserPersistentData(user.uid);
 
                 if (user.displayName) {
@@ -808,8 +839,7 @@
                 currentUser = userCredential.user;
                 persistentUserID = generate7DigitID();
                 localStorage.setItem(`mochat_id_${currentUser.uid}`, persistentUserID);
-                userDisplayId.textContent = `ID: ${persistentUserID}`;
-                cardProfileId.textContent = `ID: ${persistentUserID}`;
+                updateUIWithUserData();
                 goToStep(document.getElementById('stepName'));
             } catch (error) {
                 handleError(error);
@@ -827,8 +857,7 @@
                 persistentUserID = localStorage.getItem(`mochat_id_${currentUser.uid}`) || generate7DigitID();
                 localStorage.setItem(`mochat_id_${currentUser.uid}`, persistentUserID);
             }
-            userDisplayId.textContent = `ID: ${persistentUserID}`;
-            cardProfileId.textContent = `ID: ${persistentUserID}`;
+            updateUIWithUserData();
             goToStep(document.getElementById('stepAvatar'));
         });
 
@@ -838,8 +867,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     persistentUserAvatar = e.target.result;
-                    avatarPreview.src = persistentUserAvatar;
-                    cardProfileAvatar.src = persistentUserAvatar;
+                    updateUIWithUserData();
                     if (currentUser) {
                         localStorage.setItem(`mochat_avatar_${currentUser.uid}`, persistentUserAvatar);
                     }
@@ -865,7 +893,6 @@
                     persistentUserID = localStorage.getItem(`mochat_id_${currentUser.uid}`) || generate7DigitID();
                 }
 
-                // تثبيت البيانات نهائياً في Firebase Database
                 await set(ref(db, 'users/' + currentUser.uid), {
                     name: finalName,
                     id: persistentUserID,
@@ -942,9 +969,7 @@
         myProfileOption.addEventListener('click', () => {
             dropdownMenu.classList.remove('show');
             if (currentUser) {
-                cardProfileName.textContent = currentUser.displayName || "User";
-                cardProfileAvatar.src = persistentUserAvatar;
-                cardProfileId.textContent = `ID: ${persistentUserID || '------'}`;
+                updateUIWithUserData();
                 goToStep(document.getElementById('stepProfileView'));
             }
         });
