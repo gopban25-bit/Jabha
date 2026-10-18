@@ -1040,7 +1040,7 @@
         </div>
     </div>
 
-    <!-- مكتبة Agora الرسمية -->
+    <!-- استيراد مكتبة Agora SDK -->
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
 
     <script type="module">
@@ -1063,7 +1063,7 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // App ID الخاص بك مدمج هنا بدقة
+        // App ID الخاص بك المزروع بدقة هنا
         const AGORA_APP_ID = "d42a3fbfb6464ef5b343207912381d58";
 
         const emailInput = document.getElementById('email');
@@ -1446,7 +1446,7 @@
             loadChatMessages(activeChatRoomId);
         }
 
-        // بدء المكالمة الصوتية المباشرة عبر Agora
+        // بدء المكالمة عبر Agora.io
         callUserBtn.addEventListener('click', async () => {
             if (!activeChatTargetUid || !currentUser) return;
 
@@ -1523,29 +1523,29 @@
             }
         });
 
-        // دالة ربط وفتح قناة Agora وتشغيل الصوت بنجاح
+        // دالة ربط الأغورا المعدلة لتشغيل واستقبال الصوت بدون أخطاء
         async function joinAgoraChannel(channelName) {
             if (!agoraClient) {
                 agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
             }
 
+            // الاستماع لوصول مستخدم آخر ونشر الصوت تلقائياً
+            agoraClient.on("user-published", async (user, mediaType) => {
+                await agoraClient.subscribe(user, mediaType);
+                if (mediaType === "audio") {
+                    const remoteAudioTrack = user.audioTrack;
+                    remoteAudioTrack.play();
+                }
+            });
+
             try {
-                // الانضمام للقناة
-                await agoraClient.join(AGORA_APP_ID, channelName, null, null);
+                // الانضمام باستخدام رقم عشوائي فريد لكل جهاز
+                const uid = Math.floor(Math.random() * 100000);
+                await agoraClient.join(AGORA_APP_ID, channelName, null, uid);
                 
-                // إنشاء مسار الصوت المحلي ونشره
+                // إنشاء ونشر الميكروفون المحلي
                 localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                 await agoraClient.publish([localAudioTrack]);
-
-                // الاستماع الفوري لصوت الطرف الآخر عند دخوله للقناة
-                agoraClient.on("user-published", async (user, mediaType) => {
-                    await agoraClient.subscribe(user, mediaType);
-                    if (mediaType === "audio") {
-                        const remoteAudioTrack = user.audioTrack;
-                        remoteAudioTrack.play();
-                    }
-                });
-
             } catch (error) {
                 console.error("Agora join error:", error);
             }
@@ -1566,7 +1566,9 @@
                 localAudioTrack = null;
             }
             if (agoraClient) {
-                await agoraClient.leave();
+                try {
+                    await agoraClient.leave();
+                } catch(e) {}
             }
             callModalOverlay.classList.remove('show');
             acceptCallBtn.style.display = 'none';
@@ -1921,7 +1923,7 @@
             } else if (error.code === 'auth/email-already-in-use') {
                 msg = "Email already exists. Click Login.";
             } else if (error.code === 'auth/invalid-email') {
-                msg.textContent = "Invalid email format.";
+                msg = "Invalid email format.";
             }
             showMessage(msg, "error");
         }
