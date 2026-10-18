@@ -377,7 +377,7 @@
 
         .search-result-card {
             margin-top: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             border: 1px solid #ffd700;
             border-radius: 10px;
             padding: 10px;
@@ -919,7 +919,7 @@
             dropdownMenu.classList.remove('show');
         });
 
-        // دالة البحث بالـ ID المصلحة بالكامل لضمان جلب الحساب مباشرة
+        // دالة بحث ذكية ومحسنة للبحث عبر idMapping أو مباشرة عبر فحص جميع المستخدمين في users
         searchIdBtn.addEventListener('click', async () => {
             const queryId = searchIdInput.value.trim();
             searchResultCard.classList.remove('show');
@@ -933,13 +933,27 @@
 
             try {
                 const dbRef = ref(db);
-                // البحث مباشرة عن الـ UID المرتبط بالـ ID المدخل
+                let targetUid = null;
+
+                // 1. محاولة البحث عبر الـ idMapping أولاً
                 const idMapSnapshot = await get(child(dbRef, `idMapping/${queryId}`));
-                
                 if (idMapSnapshot.exists()) {
-                    const targetUid = idMapSnapshot.val();
+                    targetUid = idMapSnapshot.val();
+                } else {
+                    // 2. إذا لم يوجد في idMapping، نبحث مباشرة داخل قائمة المستخدمين (users) لضمان إيجاده
+                    const usersSnapshot = await get(child(dbRef, 'users'));
+                    if (usersSnapshot.exists()) {
+                        usersSnapshot.forEach((childSnapshot) => {
+                            const userData = childSnapshot.val();
+                            if (userData.id === queryId) {
+                                targetUid = childSnapshot.key;
+                            }
+                        });
+                    }
+                }
+
+                if (targetUid) {
                     const userSnapshot = await get(child(dbRef, `users/${targetUid}`));
-                    
                     if (userSnapshot.exists()) {
                         const userData = userSnapshot.val();
                         resName.textContent = userData.name || "Unknown User";
