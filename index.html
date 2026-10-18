@@ -499,7 +499,6 @@
             font-size: 14px;
         }
 
-        /* غرفة الدردشة وزر التسجيل الصوتي */
         .chat-room-container {
             display: flex;
             flex-direction: column;
@@ -910,7 +909,6 @@
         let activeChatTargetUid = null;
         let activeChatRoomId = null;
 
-        // متغيّرات تسجيل الصوت
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
@@ -1223,7 +1221,6 @@
             document.getElementById('tabChats').classList.add('active');
         });
 
-        // إرسال رسالة نصية
         sendMsgBtn.addEventListener('click', async () => {
             const text = chatMessageInput.value.trim();
             if (!text || !activeChatRoomId || !currentUser) return;
@@ -1242,7 +1239,6 @@
             }
         });
 
-        // منطق تسجيل الصوت وإرساله
         micBtn.addEventListener('click', async () => {
             if (!isRecording) {
                 try {
@@ -1290,7 +1286,6 @@
                     alert("الميكروفون مقتول أو غير مسموح به في المتصفح.");
                 }
             } else {
-                // إيقاف التسجيل
                 mediaRecorder.stop();
                 isRecording = false;
                 micBtn.classList.remove('recording');
@@ -1327,57 +1322,78 @@
             });
         }
 
+        // إزالة التكرار نهائياً وتجميع المحادثات حسب الشخص
         function loadRecentChats() {
             if (!currentUser) return;
 
             const chatsRef = ref(db, 'chats');
             onValue(chatsRef, async (snapshot) => {
                 chatsListContainer.innerHTML = '';
-                let hasChats = false;
+                
+                if (!snapshot.exists()) {
+                    chatsListContainer.innerHTML = '<div class="tab-pane-placeholder">No active messages yet. Start chatting!</div>';
+                    return;
+                }
 
-                if (snapshot.exists()) {
-                    const allChats = snapshot.val();
-                    for (let roomId in allChats) {
-                        if (roomId.includes(currentUser.uid)) {
-                            hasChats = true;
-                            const uids = roomId.split('_');
-                            const partnerUid = uids[0] === currentUser.uid ? uids[1] : uids[0];
+                const allChats = snapshot.val();
+                const uniquePartners = {};
 
-                            let partnerData = { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
-                            const userSnap = await get(child(ref(db), `users/${partnerUid}`));
-                            if (userSnap.exists()) {
-                                partnerData = userSnap.val();
-                            }
+                for (let roomId in allChats) {
+                    if (roomId.includes(currentUser.uid)) {
+                        const uids = roomId.split('_');
+                        const partnerUid = uids[0] === currentUser.uid ? uids[1] : uids[0];
+                        
+                        let lastMsgText = "No messages yet";
+                        let lastTimestamp = 0;
 
-                            let lastMsgText = "No messages yet";
-                            if (allChats[roomId].messages) {
-                                const msgKeys = Object.keys(allChats[roomId].messages);
-                                const lastKey = msgKeys[msgKeys.length - 1];
-                                const lastObj = allChats[roomId].messages[lastKey];
-                                lastMsgText = lastObj.type === "audio" ? "🎵 Voice Note" : lastObj.text;
-                            }
-
-                            const chatItem = document.createElement('div');
-                            chatItem.className = 'chat-item';
-                            chatItem.innerHTML = `
-                                <img src="${partnerData.avatar || 'https://via.placeholder.com/150/000000/FFD700?text=User'}" class="chat-item-avatar" alt="">
-                                <div class="chat-item-details">
-                                    <p class="chat-item-name">${partnerData.name || 'Unknown User'}</p>
-                                    <p class="chat-item-lastmsg">${lastMsgText}</p>
-                                </div>
-                            `;
-
-                            chatItem.addEventListener('click', () => {
-                                openChatRoom(partnerUid, partnerData.name, partnerData.avatar);
-                            });
-
-                            chatsListContainer.appendChild(chatItem);
+                        if (allChats[roomId].messages) {
+                            const msgKeys = Object.keys(allChats[roomId].messages);
+                            const lastKey = msgKeys[msgKeys.length - 1];
+                            const lastObj = allChats[roomId].messages[lastKey];
+                            lastMsgText = lastObj.type === "audio" ? "🎵 Voice Note" : lastObj.text;
+                            lastTimestamp = lastObj.timestamp || 0;
                         }
+
+                        uniquePartners[partnerUid] = {
+                            partnerUid,
+                            lastMsgText,
+                            lastTimestamp
+                        };
                     }
                 }
 
-                if (!hasChats) {
+                const partnerKeys = Object.keys(uniquePartners);
+                if (partnerKeys.length === 0) {
                     chatsListContainer.innerHTML = '<div class="tab-pane-placeholder">No active messages yet. Start chatting!</div>';
+                    return;
+                }
+
+                for (let partnerUid of partnerKeys) {
+                    const itemData = uniquePartners[partnerUid];
+                    let partnerData = { name: "User", avatar: "https://via.placeholder.com/150/000000/FFD700?text=User" };
+                    
+                    try {
+                        const userSnap = await get(child(ref(db), `users/${partnerUid}`));
+                        if (userSnap.exists()) {
+                            partnerData = userSnap.val();
+                        }
+                    } catch(e) {}
+
+                    const chatItem = document.createElement('div');
+                    chatItem.className = 'chat-item';
+                    chatItem.innerHTML = `
+                        <img src="${partnerData.avatar || 'https://via.placeholder.com/150/000000/FFD700?text=User'}" class="chat-item-avatar" alt="">
+                        <div class="chat-item-details">
+                            <p class="chat-item-name">${partnerData.name || 'Unknown User'}</p>
+                            <p class="chat-item-lastmsg">${itemData.lastMsgText}</p>
+                        </div>
+                    `;
+
+                    chatItem.addEventListener('click', () => {
+                        openChatRoom(partnerUid, partnerData.name, partnerData.avatar);
+                    });
+
+                    chatsListContainer.appendChild(chatItem);
                 }
             });
         }
