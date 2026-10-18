@@ -639,7 +639,7 @@
             margin-top: 4px;
         }
 
-        /* نافذة خيارات الحذف عند الضغط المطول */
+        /* نافذة اختيار نوع الحذف */
         .delete-modal-overlay {
             position: absolute;
             inset: 0;
@@ -665,17 +665,12 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
         .delete-modal-card h3 {
-            margin: 0;
+            margin: 0 0 5px 0;
             font-size: 16px;
             color: #ffd700;
-        }
-        .delete-modal-card p {
-            margin: 0;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.8);
         }
         .delete-action-btn {
             padding: 10px;
@@ -684,7 +679,12 @@
             font-weight: bold;
             font-size: 13px;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: background 0.2s;
+        }
+        .delete-action-btn.me {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #ffd700;
+            color: #ffd700;
         }
         .delete-action-btn.everyone {
             background: #ff1744;
@@ -694,6 +694,7 @@
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
+            margin-top: 5px;
         }
 
         .bottom-nav {
@@ -914,12 +915,12 @@
                 </div>
             </div>
 
-            <!-- نافذة تأكيد الحذف -->
+            <!-- نافذة الخيارات: حذف لدي فقط / حذف لدى الجميع -->
             <div id="deleteModalOverlay" class="delete-modal-overlay">
                 <div class="delete-modal-card">
                     <h3>حذف الرسالة</h3>
-                    <p>هل تريد حذف هذه الرسالة؟</p>
-                    <button id="confirmDeleteBtn" class="delete-action-btn everyone">حذف الرسالة</button>
+                    <button id="deleteForMeBtn" class="delete-action-btn me">حذف لدي فقط</button>
+                    <button id="deleteForEveryoneBtn" class="delete-action-btn everyone">حذف لدى الجميع</button>
                     <button id="cancelDeleteBtn" class="delete-action-btn cancel">إلغاء</button>
                 </div>
             </div>
@@ -994,7 +995,8 @@
         const recordTimer = document.getElementById('recordTimer');
 
         const deleteModalOverlay = document.getElementById('deleteModalOverlay');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteForMeBtn = document.getElementById('deleteForMeBtn');
+        const deleteForEveryoneBtn = document.getElementById('deleteForEveryoneBtn');
         const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 
         let currentUser = null;
@@ -1309,28 +1311,34 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById('tabChatRoom').classList.add('active');
 
-            markMessagesAsRead(activeChatRoomId);
+            cleanOldMessagesAndMarkRead(activeChatRoomId);
             loadChatMessages(activeChatRoomId);
         }
 
-        async function markMessagesAsRead(roomId) {
+        async function cleanOldMessagesAndMarkRead(roomId) {
             try {
                 const msgSnapshot = await get(ref(db, `chats/${roomId}/messages`));
                 if (msgSnapshot.exists()) {
+                    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
                     const updates = {};
+                    
                     msgSnapshot.forEach((childSnap) => {
                         const msgKey = childSnap.key;
                         const msg = childSnap.val();
-                        if (msg.sender !== currentUser.uid && !msg.read) {
+                        
+                        if (msg.timestamp && msg.timestamp < thirtyDaysAgo) {
+                            updates[msgKey] = null;
+                        } else if (msg.sender !== currentUser.uid && !msg.read) {
                             updates[`${msgKey}/read`] = true;
                         }
                     });
+
                     if (Object.keys(updates).length > 0) {
                         await update(ref(db, `chats/${roomId}/messages`), updates);
                     }
                 }
             } catch (e) {
-                console.error("Error marking messages as read", e);
+                console.error("Error cleaning old messages", e);
             }
         }
 
@@ -1422,9 +1430,16 @@
             onValue(msgRef, (snapshot) => {
                 chatMessagesList.innerHTML = '';
                 if (snapshot.exists()) {
+                    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+
                     snapshot.forEach((childSnap) => {
                         const msgKey = childSnap.key;
                         const msg = childSnap.val();
+
+                        // إذا كانت الرسالة محمية بالحذف لدي فقط للـ currentUser نتجاهل عرضها
+                        if (msg.deletedFor && msg.deletedFor[currentUser.uid]) return;
+
+                        if (msg.timestamp && msg.timestamp < thirtyDaysAgo) return;
 
                         const div = document.createElement('div');
                         div.className = `message-bubble ${msg.sender === currentUser.uid ? 'sent' : 'received'}`;
@@ -1438,14 +1453,20 @@
                             div.textContent = msg.text || '';
                         }
 
-                        // الضغط المطول لإظهار خيارات الحذف (Long Press)
                         let pressTimer = null;
-
                         const startPress = () => {
                             pressTimer = setTimeout(() => {
                                 selectedMessageKey = msgKey;
+
+                                // إظهار أو إخفاء زر "حذف لدى الجميع" حسب صاحب الرسالة
+                                if (msg.sender === currentUser.uid) {
+                                    deleteForEveryoneBtn.style.display = 'block';
+                                } else {
+                                    deleteForEveryoneBtn.style.display = 'none';
+                                }
+
                                 deleteModalOverlay.classList.add('show');
-                            }, 600); // 600ms للضغط المطول
+                            }, 600);
                         };
 
                         const cancelPress = () => {
@@ -1467,19 +1488,32 @@
             });
         }
 
-        // إلغاء حذف الرسالة
+        // إلغاء النافذة
         cancelDeleteBtn.addEventListener('click', () => {
             deleteModalOverlay.classList.remove('show');
             selectedMessageKey = null;
         });
 
-        // تأكيد حذف الرسالة من Firebase
-        confirmDeleteBtn.addEventListener('click', async () => {
+        // خيار (1): حذف لدي فقط
+        deleteForMeBtn.addEventListener('click', async () => {
+            if (selectedMessageKey && activeChatRoomId && currentUser) {
+                try {
+                    await set(ref(db, `chats/${activeChatRoomId}/messages/${selectedMessageKey}/deletedFor/${currentUser.uid}`), true);
+                } catch (e) {
+                    console.error("Error deleting message for me", e);
+                }
+            }
+            deleteModalOverlay.classList.remove('show');
+            selectedMessageKey = null;
+        });
+
+        // خيار (2): حذف لدى الجميع
+        deleteForEveryoneBtn.addEventListener('click', async () => {
             if (selectedMessageKey && activeChatRoomId) {
                 try {
                     await remove(ref(db, `chats/${activeChatRoomId}/messages/${selectedMessageKey}`));
                 } catch (e) {
-                    console.error("Error deleting message", e);
+                    console.error("Error deleting message for everyone", e);
                 }
             }
             deleteModalOverlay.classList.remove('show');
@@ -1501,6 +1535,7 @@
 
                 const allChats = snapshot.val();
                 const uniqueMap = {};
+                const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
 
                 for (let roomId in allChats) {
                     if (roomId.includes(currentUser.uid)) {
@@ -1514,18 +1549,27 @@
                         if (allChats[roomId].messages) {
                             const messagesObj = allChats[roomId].messages;
                             const msgKeys = Object.keys(messagesObj);
-                            const lastKey = msgKeys[msgKeys.length - 1];
-                            const lastObj = messagesObj[lastKey];
 
-                            lastMsgText = lastObj.type === "audio" ? "🎵 Voice Note" : lastObj.text;
-                            lastTimestamp = lastObj.timestamp || 0;
-
-                            msgKeys.forEach(k => {
+                            const validKeys = msgKeys.filter(k => {
                                 const m = messagesObj[k];
-                                if (m.sender === partnerUid && m.read === false) {
-                                    unreadCount++;
-                                }
+                                const notDeletedForMe = !(m.deletedFor && m.deletedFor[currentUser.uid]);
+                                return notDeletedForMe && (!m.timestamp || m.timestamp >= thirtyDaysAgo);
                             });
+
+                            if (validKeys.length > 0) {
+                                const lastKey = validKeys[validKeys.length - 1];
+                                const lastObj = messagesObj[lastKey];
+
+                                lastMsgText = lastObj.type === "audio" ? "🎵 Voice Note" : lastObj.text;
+                                lastTimestamp = lastObj.timestamp || 0;
+
+                                validKeys.forEach(k => {
+                                    const m = messagesObj[k];
+                                    if (m.sender === partnerUid && m.read === false) {
+                                        unreadCount++;
+                                    }
+                                });
+                            }
                         }
 
                         if (!uniqueMap[partnerUid] || uniqueMap[partnerUid].lastTimestamp < lastTimestamp) {
