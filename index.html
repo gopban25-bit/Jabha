@@ -547,7 +547,6 @@
             font-weight: bold;
         }
 
-        /* زر الاتصال الجديد في الفوق */
         .call-user-btn {
             background: rgba(255, 215, 0, 0.15);
             border: 1px solid #ffd700;
@@ -558,7 +557,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            margin-left: auto; /* لجعله في أقصى اليمين */
+            margin-left: auto;
             transition: all 0.2s;
         }
         .call-user-btn:hover {
@@ -672,6 +671,66 @@
             height: 35px;
             outline: none;
             margin-top: 4px;
+        }
+
+        /* نافذة الاتصال الوارد / الصادر */
+        .call-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            padding: 20px;
+            text-align: center;
+        }
+        .call-modal-overlay.show {
+            display: flex;
+        }
+        .call-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+            object-fit: cover;
+            margin-bottom: 15px;
+            animation: pulseRecord 1.2s infinite alternate;
+        }
+        .call-status-text {
+            font-size: 16px;
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        .call-actions {
+            display: flex;
+            gap: 20px;
+        }
+        .call-action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .call-action-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: #fff;
+        }
+        .call-action-btn.accept {
+            background: #00e676;
+        }
+        .call-action-btn.reject {
+            background: #ff1744;
         }
 
         .delete-modal-overlay {
@@ -887,7 +946,7 @@
                         </div>
                     </div>
 
-                    <!-- غرفة المحادثة مع زر الاتصال في الفوق -->
+                    <!-- غرفة المحادثة مع زر الاتصال -->
                     <div id="tabChatRoom" class="tab-content">
                         <div class="chat-room-container">
                             <div class="chat-room-header">
@@ -895,7 +954,6 @@
                                 <img id="roomUserAvatar" class="search-result-avatar" style="width:35px;height:35px;" src="" alt="">
                                 <h4 id="roomUserName" style="margin:0; font-size:14px; color:#fff;">Chat</h4>
                                 
-                                <!-- زر الاتصال الجديد -->
                                 <button class="call-user-btn" id="callUserBtn" title="Call User">
                                     <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
                                 </button>
@@ -956,7 +1014,24 @@
                 </div>
             </div>
 
-            <!-- نافذة الخيارات -->
+            <!-- نافذة الاتصال (المكالمات الواردة/الصادرة) -->
+            <div id="callModalOverlay" class="call-modal-overlay">
+                <img id="callModalAvatar" class="call-avatar" src="" alt="">
+                <h3 id="callModalName" style="margin: 0 0 5px 0; color: #fff; font-size: 20px;">اسم الشخص</h3>
+                <p id="callModalStatus" class="call-status-text">جاري الاتصال...</p>
+                
+                <div class="call-actions" id="callActionsContainer">
+                    <!-- أزرار القبول والرفض تظهر حسب حالة الاتصال -->
+                    <button id="acceptCallBtn" class="call-action-btn accept" style="display:none;" title="قبول">
+                        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                    </button>
+                    <button id="rejectCallBtn" class="call-action-btn reject" title="إنهاء / رفض">
+                        <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.18-.29-.43-.29-.71 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.66c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.51-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- نافذة الخيارات للرسائل -->
             <div id="deleteModalOverlay" class="delete-modal-overlay">
                 <div class="delete-modal-card">
                     <h3>حذف الرسالة</h3>
@@ -1036,6 +1111,13 @@
         const recordTimer = document.getElementById('recordTimer');
         const callUserBtn = document.getElementById('callUserBtn');
 
+        const callModalOverlay = document.getElementById('callModalOverlay');
+        const callModalAvatar = document.getElementById('callModalAvatar');
+        const callModalName = document.getElementById('callModalName');
+        const callModalStatus = document.getElementById('callModalStatus');
+        const acceptCallBtn = document.getElementById('acceptCallBtn');
+        const rejectCallBtn = document.getElementById('rejectCallBtn');
+
         const deleteModalOverlay = document.getElementById('deleteModalOverlay');
         const deleteForMeBtn = document.getElementById('deleteForMeBtn');
         const deleteForEveryoneBtn = document.getElementById('deleteForEveryoneBtn');
@@ -1046,13 +1128,13 @@
         let persistentUserAvatar = "https://via.placeholder.com/150/000000/FFD700?text=User";
         let activeChatTargetUid = null;
         let activeChatRoomId = null;
+        let activeCallId = null;
 
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
         let timerInterval = null;
         let recordSeconds = 0;
-
         let selectedMessageKey = null;
 
         function generate7DigitID() {
@@ -1141,6 +1223,7 @@
 
                 fetchOrCreateUserPersistentData(user.uid);
                 loadRecentChats();
+                listenForIncomingCalls(user.uid);
 
                 if (user.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -1168,6 +1251,7 @@
 
                 await fetchOrCreateUserPersistentData(currentUser.uid);
                 loadRecentChats();
+                listenForIncomingCalls(currentUser.uid);
 
                 if (currentUser.displayName) {
                     goToStep(document.getElementById('stepMainApp'));
@@ -1258,6 +1342,7 @@
                 await set(ref(db, 'idMapping/' + persistentUserID), currentUser.uid);
 
                 loadRecentChats();
+                listenForIncomingCalls(currentUser.uid);
                 goToStep(document.getElementById('stepMainApp'));
             } catch (error) {
                 goToStep(document.getElementById('stepMainApp'));
@@ -1357,12 +1442,97 @@
             loadChatMessages(activeChatRoomId);
         }
 
-        // تفاعل زر الاتصال (Call)
-        callUserBtn.addEventListener('click', () => {
-            if (!activeChatTargetUid) return;
-            alert("📞 جاري الاتصال بالطرف الآخر...");
-            // يمكنك هنا إضافة كود لفتح واجهة مكالمة حقيقية أو إرسال إشعار اتصال عبر Firebase
+        // تفعيل بدء المكالمة الحقيقية عبر Firebase
+        callUserBtn.addEventListener('click', async () => {
+            if (!activeChatTargetUid || !currentUser) return;
+
+            activeCallId = [currentUser.uid, activeChatTargetUid].sort().join('_');
+
+            try {
+                // إنشاء سجل مكالمة في قاعدة البيانات
+                await set(ref(db, `calls/${activeCallId}`), {
+                    caller: currentUser.uid,
+                    receiver: activeChatTargetUid,
+                    status: "ringing", // ringing, accepted, rejected
+                    timestamp: Date.now()
+                });
+
+                // إظهار واجهة الاتصال الصادر عندك
+                callModalAvatar.src = roomUserAvatar.src;
+                callModalName.textContent = roomUserName.textContent;
+                callModalStatus.textContent = "جاري الاتصال...";
+                acceptCallBtn.style.display = 'none';
+                callModalOverlay.classList.add('show');
+
+                // مراقبة حالة المكالمة (هل قبلها الطرف الآخر أو رفضها)
+                onValue(ref(db, `calls/${activeCallId}`), (snapshot) => {
+                    if (snapshot.exists()) {
+                        const callData = snapshot.val();
+                        if (callData.status === "accepted") {
+                            callModalStatus.textContent = "المكالمة جارية 🟢";
+                        } else if (callData.status === "rejected" || callData.status === "ended") {
+                            closeCallModal();
+                        }
+                    } else {
+                        closeCallModal();
+                    }
+                }, { onlyOnce: false });
+
+            } catch (e) {
+                console.error("Error starting call", e);
+            }
         });
+
+        // مراقبة الاتصالات الواردة للمستخدم الحالي
+        function listenForIncomingCalls(uid) {
+            const callsRef = ref(db, 'calls');
+            onValue(callsRef, async (snapshot) => {
+                if (!snapshot.exists()) return;
+                const allCalls = snapshot.val();
+
+                for (let callId in allCalls) {
+                    const callData = allCalls[callId];
+                    if (callData.receiver === uid && callData.status === "ringing") {
+                        activeCallId = callId;
+
+                        // جلب بيانات الشخص اللي كيعيط
+                        const userSnap = await get(ref(db, `users/${callData.caller}`));
+                        const callerData = userSnap.exists() ? userSnap.val() : { name: "مستخدم", avatar: "" };
+
+                        callModalAvatar.src = callerData.avatar || "https://via.placeholder.com/150/000000/FFD700?text=User";
+                        callModalName.textContent = callerData.name;
+                        callModalStatus.textContent = "يتصل بك الآن... 📞";
+                        acceptCallBtn.style.display = 'flex';
+                        callModalOverlay.classList.add('show');
+                        break;
+                    }
+                }
+            });
+        }
+
+        // قبول المكالمة
+        acceptCallBtn.addEventListener('click', async () => {
+            if (activeCallId) {
+                await update(ref(db, `calls/${activeCallId}`), { status: "accepted" });
+                callModalStatus.textContent = "المكالمة جارية 🟢";
+                acceptCallBtn.style.display = 'none';
+            }
+        });
+
+        // رفض أو إنهاء المكالمة
+        rejectCallBtn.addEventListener('click', async () => {
+            if (activeCallId) {
+                await update(ref(db, `calls/${activeCallId}`), { status: "rejected" });
+                await remove(ref(db, `calls/${activeCallId}`));
+            }
+            closeCallModal();
+        });
+
+        function closeCallModal() {
+            callModalOverlay.classList.remove('show');
+            acceptCallBtn.style.display = 'none';
+            activeCallId = null;
+        }
 
         async function cleanOldMessagesAndMarkRead(roomId) {
             try {
